@@ -203,11 +203,13 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   @AfterAll
   public void tearDownAll() {
     // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
+    if (System.getenv("SKIP_CLEANUP") == null) {
+      if (nginxHelmParams != null) {
+        assertThat(uninstallNginx(nginxHelmParams))
+            .as("Test uninstallNginx returns true")
+            .withFailMessage("uninstallNginx() did not return true")
+            .isTrue();
+      }
     }
   }
 
