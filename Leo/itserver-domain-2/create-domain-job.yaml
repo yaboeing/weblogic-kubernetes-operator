@@ -1,0 +1,99 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: itserver-domain-2-create-weblogic-sample-domain-job
+  namespace: itserver-domainns-1
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        weblogic.domainUID: itserver-domain-2
+        weblogic.domainName: itserver-domain-2
+        app: itserver-domain-2-create-weblogic-sample-domain-job
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: fix-pvc-owner
+          image: container-registry.oracle.com/middleware/weblogic:12.2.1.4
+          command: ["sh", "-c", "chown -R 1000:1000 /shared"]
+          volumeMounts:
+          - name: weblogic-sample-domain-storage-volume
+            mountPath: /shared
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+      containers:
+        - name: create-weblogic-sample-domain-job
+          image: container-registry.oracle.com/middleware/weblogic:12.2.1.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7001
+          volumeMounts:
+          - mountPath: /u01/weblogic
+            name: create-weblogic-sample-domain-job-cm-volume
+          - mountPath: /shared
+            name: weblogic-sample-domain-storage-volume
+          - mountPath: /weblogic-operator/secrets
+            name: weblogic-credentials-volume
+          command: ["/bin/sh"]
+          args: ["/u01/weblogic/create-domain-job.sh"]
+          env:
+            - name: DOMAIN_UID
+              value: "itserver-domain-2"
+            - name: DOMAIN_NAME
+              value: "itserver-domain-2"
+            - name: ADMIN_SERVER_NAME
+              value: "admin-server"
+            - name: ADMIN_SERVER_NAME_SVC
+              value: "admin-server"
+            - name: ADMIN_PORT
+              value: "7001"
+            - name: CLUSTER_NAME
+              value: "cluster-1"
+            - name: CLUSTER_TYPE
+              value: "DYNAMIC"
+            - name: T3_CHANNEL_PORT
+              value: "31002"
+            - name: T3_PUBLIC_ADDRESS
+              value: "slc12enr"
+            - name: MANAGED_SERVER_NAME_BASE_SVC
+              value: "managed-server"
+            - name: MANAGED_SERVER_NAME_BASE
+              value: "managed-server"
+            - name: CONFIGURED_MANAGED_SERVER_COUNT
+              value: "4"
+            - name: MANAGED_SERVER_PORT
+              value: "8001"
+            - name: PRODUCTION_MODE_ENABLED
+              value: "true"
+            - name: CREATE_DOMAIN_SCRIPT_DIR
+              value: "/u01/weblogic"
+            - name: DOMAIN_ROOT_DIR
+              value: "/shared"
+            - name: DOMAIN_HOME_DIR
+              value: "/shared/domains/itserver-domain-2"
+            - name: DOMAIN_LOGS_DIR
+              value: "/shared/logs/itserver-domain-2"
+            - name: ISTIO_ENABLED
+              value: "false"
+            - name: ISTIO_READINESS_PORT
+              value: "8888"
+            - name: WDT_VERSION
+              value: 1.7.2
+      volumes:
+        - name: create-weblogic-sample-domain-job-cm-volume
+          configMap:
+            name: itserver-domain-2-create-weblogic-sample-domain-job-cm
+        - name: weblogic-sample-domain-storage-volume
+          persistentVolumeClaim:
+            claimName: itserver-domain-2-weblogic-sample-pvc
+        - name: weblogic-credentials-volume
+          secret:
+            secretName: itserver-domain-2-weblogic-credentials
+      imagePullSecrets:
+      - name: docker-store
