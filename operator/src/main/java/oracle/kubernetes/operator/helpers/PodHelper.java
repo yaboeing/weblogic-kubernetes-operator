@@ -349,8 +349,8 @@ public class PodHelper {
       super(conflictStep, packet);
       this.packet = packet;
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-
       init();
+      LOGGER.info("DEBUG: ManagedPodStepContext created " + clusterName);
     }
 
     @Override
@@ -396,6 +396,7 @@ public class PodHelper {
 
     private Step deferProcessing(Step deferredStep) {
       synchronized (packet) {
+        LOGGER.info("DEBUG: ManagedPodStepContext.deferProcessing ");
         Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
       }
       return null;
@@ -411,12 +412,14 @@ public class PodHelper {
     }
 
     private Step createProgressingStep(Step actionStep) {
+      LOGGER.info("DEBUG: ManagedPodStepContext.createProgressingStep");
       return DomainStatusUpdater.createProgressingStep(
           DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, actionStep);
     }
 
     @Override
     Step createNewPod(Step next) {
+      LOGGER.info("DEBUG: ManagedPodStepContext.createNewPod");
       return createProgressingStep(createPod(next));
     }
 
@@ -478,6 +481,7 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
       ManagedPodStepContext context = new ManagedPodStepContext(this, packet);
+      LOGGER.info("DEBUG: PodHelper.ManagedPodStep applied ");
 
       return doNext(context.verifyPod(getNext()), packet);
     }

@@ -301,6 +301,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private Step createPodAsync(ResponseStep<V1Pod> response) {
+    LOGGER.info("DEBUG: PodStepContext.createPodAsync ns = " + getNamespace());
+    LOGGER.info("DEBUG: PodStepContext.createPodAsync model = " + getPodModel().toString());
     return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), response);
   }
 

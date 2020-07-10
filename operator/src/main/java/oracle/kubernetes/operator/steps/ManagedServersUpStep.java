@@ -93,7 +93,7 @@ public class ManagedServersUpStep extends Step {
     LOGGER.entering();
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-
+    LOGGER.info("DEBUG: ManagedServersUpStep.apply wlsDomainConfig " + Optional.ofNullable(config).toString());
     ServersUpStepFactory factory = new ServersUpStepFactory(config, info.getDomain());
 
     if (LOGGER.isFineEnabled()) {
@@ -102,6 +102,7 @@ public class ManagedServersUpStep extends Step {
 
     Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig));
 
+    LOGGER.info("DEBUG: ManagedServersUpStep.apply wlsDomainConfig " + Optional.ofNullable(info).toString());
     info.setServerStartupInfo(factory.getStartupInfos());
     LOGGER.exiting();
 
@@ -120,6 +121,8 @@ public class ManagedServersUpStep extends Step {
     wlsDomainConfig.getServerConfigs().values().stream()
         .filter(wlsServerConfig -> !clusteredServers.contains(wlsServerConfig.getName()))
         .forEach(wlsServerConfig -> factory.addServerIfNeeded(wlsServerConfig, null));
+
+    LOGGER.info("DEBUG: addServersToFactory wlsDomainConfig " + wlsDomainConfig.toString());
   }
 
   private void addClusteredServersToFactory(@Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
@@ -133,6 +136,7 @@ public class ManagedServersUpStep extends Step {
           factory.addServerIfNeeded(wlsServerConfig, wlsClusterConfig);
           clusteredServers.add(wlsServerConfig.getName());
         });
+    LOGGER.info("DEBUG: addClusteredServersToFactory wlsClusterConfig " + wlsClusterConfig.toString());
   }
 
   // an interface to provide a hook for unit testing.
@@ -178,10 +182,13 @@ public class ManagedServersUpStep extends Step {
       ServerSpec server = domain.getServer(serverName, clusterName);
 
       if (server.shouldStart(getReplicaCount(clusterName))) {
+        LOGGER.info("DEBUG: addServerIfNeeded: shouldStart server " + serverName + " cluster " + clusterName);
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
       } else if (shouldPrecreateServerService(server)) {
+        LOGGER.info("DEBUG: addServerIfNeeded: shouldPreCreateServer server " + serverName + " cluseter "
+              + clusterName);
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server, true));
       }

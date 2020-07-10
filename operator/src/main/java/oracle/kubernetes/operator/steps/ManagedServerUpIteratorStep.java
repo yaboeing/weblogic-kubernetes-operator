@@ -57,6 +57,7 @@ public class ManagedServerUpIteratorStep extends Step {
   // "clusterScan"
   // "envVars"
   private static Step bringManagedServerUp(ServerStartupInfo ssi) {
+    LOGGER.info("DEBUG: ManagedServerUpIteratorStep.bringManagedServerUp serverStartupInfo " + ssi.toString());
     return ssi.isServiceOnly()
         ? ServiceHelper.createForServerStep(
             true, new ServerDownStep(ssi.getServerName(), true, null))
