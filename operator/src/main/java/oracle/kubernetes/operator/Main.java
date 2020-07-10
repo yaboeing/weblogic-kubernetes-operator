@@ -318,10 +318,9 @@ public class Main {
         processor.reportSuspendedFibers();
         isFullRecheck = true;
         lastFullRecheck.set(now);
-        LOGGER.info("DEBUG: fiber reported suspended " + now.toString());
+        LOGGER.info("DEBUG: recheckDomains suspended " + now.toString());
       } else {
         // check for namespaces that need to be started
-        LOGGER.info("DEBUG: fiber checking for domains " + now.toString());
         namespacesToStart = new TreeSet<>(targetNamespaces);
         namespacesToStart.removeAll(namespaceStatuses.keySet());
         for (String ns : targetNamespaces) {
@@ -329,6 +328,7 @@ public class Main {
             namespacesToStart.remove(ns);
           }
         }
+        LOGGER.info("DEBUG: recheckDomains " + now.toString() + " size=" + namespacesToStart.size());
       }
 
       if (!namespacesToStart.isEmpty()) {
