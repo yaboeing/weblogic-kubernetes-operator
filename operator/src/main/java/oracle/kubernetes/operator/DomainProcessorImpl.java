@@ -626,13 +626,17 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean isShouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
       if (cachedInfo == null || cachedInfo.getDomain() == null) {
+        LOGGER.info("DEBUG: MakeRightDomainOperationImpl.isShouldContinue cachedInfo.getDomain == null");
         return true;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
+        LOGGER.info("DEBUG: MakeRightDomainOperationImpl.isShouldContinue isCachedInfoNewer true");
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
+        LOGGER.info("DEBUG: MakeRightDomainOperationImpl.isShouldContinue isCachedInfoNewer explicit check");
         return true;
       }
       cachedInfo.setDomain(getDomain());
+      LOGGER.info("DEBUG: MakeRightDomainOperationImpl.isShouldContinue isCachedInfoNewer default false");
       return false;
     }
 

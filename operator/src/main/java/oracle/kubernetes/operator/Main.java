@@ -318,8 +318,10 @@ public class Main {
         processor.reportSuspendedFibers();
         isFullRecheck = true;
         lastFullRecheck.set(now);
+        LOGGER.info("DEBUG: fiber reported suspended " + now.toString());
       } else {
         // check for namespaces that need to be started
+        LOGGER.info("DEBUG: fiber checking for domains " + now.toString());
         namespacesToStart = new TreeSet<>(targetNamespaces);
         namespacesToStart.removeAll(namespaceStatuses.keySet());
         for (String ns : targetNamespaces) {

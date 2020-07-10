@@ -166,6 +166,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
    * @return Asynchronous step
    */
   public Step waitForReady(V1Pod pod, Step next) {
+    LOGGER.info("DEBUG: PodWatcher waitForReady " + pod.toString());
     return new WaitForPodReadyStep(pod, next);
   }
 
@@ -201,6 +202,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     private WaitForPodReadyStep(V1Pod pod, Step next) {
       super(pod, next);
+      LOGGER.info("DEBUG: PodWatcher WaitForPodReadyStep " + pod.toString());
     }
 
     // A pod is ready if it is not being deleted and has the ready status.
@@ -212,6 +214,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     // Pods should be processed if ready.
     @Override
     boolean shouldProcessCallback(V1Pod resource) {
+      LOGGER.info("DEBUG: PodWatcher shouldProcessCallBack " + resource.toString());
+      LOGGER.info("DEBUG: PodWatcher shouldProcessCallBack RETURN " + isReady(resource));
       return isReady(resource);
     }
 

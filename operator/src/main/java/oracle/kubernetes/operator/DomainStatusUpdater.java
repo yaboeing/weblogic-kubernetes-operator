@@ -179,7 +179,9 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       DomainStatusUpdaterContext context = createContext(packet);
       DomainStatus newStatus = context.getNewStatus();
-
+      LOGGER.info("DEBUG: DomainStatusUpdaterStep.apply isStatusUnchanged "
+          + context.isStatusUnchanged(newStatus));
+      LOGGER.info("DEBUG: DomainStatusUpdaterStep.apply newStatus " + newStatus.toString());
       return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
             : doNext(createDomainStatusReplaceStep(context, newStatus), packet);

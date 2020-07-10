@@ -474,8 +474,10 @@ public class DomainPresenceInfo {
     } else {
       sb.append(", namespace=").append(namespace);
     }
+    if (serverStartupInfo != null) {
+      sb.append(", serverStartupInfo=").append(serverStartupInfo.toString());
+    }
     sb.append("}");
-
     return sb.toString();
   }
 
