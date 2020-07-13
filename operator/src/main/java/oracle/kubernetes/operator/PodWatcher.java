@@ -135,9 +135,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     LOGGER.entering();
 
     listener.receivedResponse(item);
-
     V1Pod pod = item.object;
     String podName = pod.getMetadata().getName();
+    LOGGER.info("DEBUG: PodWatcher.receiveResponse type " + item.type);
+    LOGGER.info("DEBUG: PodWatcher.receiveResponse podname " + podName);
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
