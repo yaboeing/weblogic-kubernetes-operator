@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -47,6 +47,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -1044,46 +1045,64 @@ class ItMiiDomain {
       String internalPort,
       String appPath
   ) {
-    boolean v2AppAvailable = false;
+    with().pollDelay(1, SECONDS)
+        .and().with().pollInterval(200, MILLISECONDS)
+        .atMost(15, MINUTES).await().conditionEvaluationListener(
+            condition -> logger.info("Waiting for application to be patched in namespace {0} "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(
+            () -> checkAvailability(
+                namespace, appAvailability, managedServerPrefix, replicaCount, internalPort, appPath),
+            String.format(
+                "Pod %s is not patched with image %s in namespace %s.",
+                namespace)));
+  }
 
-    // Access the pod periodically to check application's availability across the duration
-    // of patching the domain with newer version of the application.
-    while (!v2AppAvailable)  {
-      v2AppAvailable = true;
+  private static Callable<Boolean> checkAvailability(
+      String namespace,
+      List<Integer> appAvailability,
+      String managedServerPrefix,
+      int replicaCount,
+      String internalPort,
+      String appPath
+  ) {
+    return () -> {
+      // Access the pod periodically to check application's availability across the duration
+      // of patching the domain with newer version of the application.
+      boolean v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
         v2AppAvailable = v2AppAvailable && appAccessibleInPod(
-                            namespace,
-                            managedServerPrefix + i, 
-                            internalPort, 
-                            appPath, 
-                            MII_APP_RESPONSE_V2 + i);
+            namespace,
+            managedServerPrefix + i,
+            internalPort,
+            appPath,
+            MII_APP_RESPONSE_V2 + i);
       }
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
         if (appAccessibleInPod(
             namespace,
-            managedServerPrefix + i, 
-            internalPort, 
-            appPath, 
-            "Hello World")) {  
+            managedServerPrefix + i,
+            internalPort,
+            appPath,
+            "Hello World")) {
           count++;
         }
       }
       appAvailability.add(count);
-      
+
       if (count == 0) {
-        logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
-        break;
+        logger.info("V1 application not available!");
+        return true;
       } else {
-        logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
+        logger.fine("V1 application available count = " + count);
       }
-      try {
-        TimeUnit.MILLISECONDS.sleep(200);
-      } catch (InterruptedException ie) {
-        // do nothing
-      }
-    }
+      return v2AppAvailable;
+    };
   }
   
   private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
