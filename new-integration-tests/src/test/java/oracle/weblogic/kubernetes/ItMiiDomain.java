@@ -1045,23 +1045,23 @@ class ItMiiDomain {
       String internalPort,
       String appPath
   ) {
-    with().pollDelay(1, SECONDS)
-        .and().with().pollInterval(200, MILLISECONDS)
-        .atMost(15, MINUTES).await().conditionEvaluationListener(
+    with().pollDelay(100, MILLISECONDS)
+        .and().with().pollInterval(400, MILLISECONDS)
+        .atMost(10, MINUTES).await().conditionEvaluationListener(
             condition -> logger.info("Waiting for application to be patched in namespace {0} "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(
-            () -> checkAvailability(
+            () -> appAvailabilityCheckCompleted(
                 namespace, appAvailability, managedServerPrefix, replicaCount, internalPort, appPath),
             String.format(
-                "Application %s is not available on all managed servers after patching in namespace %s.",
+                "Checking availability of application %s in namespace %s failed.",
                 appPath, namespace)));
   }
 
-  private static Callable<Boolean> checkAvailability(
+  private static Callable<Boolean> appAvailabilityCheckCompleted(
       String namespace,
       List<Integer> appAvailability,
       String managedServerPrefix,
@@ -1097,11 +1097,10 @@ class ItMiiDomain {
 
       if (count == 0) {
         logger.info("Neither V1 nor V2 application available!");
-        return true;
       } else {
         logger.fine("Either V1 or V2 application, or both available count = " + count);
       }
-      return v2AppAvailable;
+      return v2AppAvailable || (count == 0);
     };
   }
   
