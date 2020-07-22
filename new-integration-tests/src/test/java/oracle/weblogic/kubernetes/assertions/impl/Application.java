@@ -39,7 +39,7 @@ public class Application {
 
     // access the application in the given pod
     String[] cmd = new String[] {
-        "/usr/bin/curl",
+        "/usr/bin/curl -m 50",
         String.format("http://%s:%s/%s",
             podName,
             port,
