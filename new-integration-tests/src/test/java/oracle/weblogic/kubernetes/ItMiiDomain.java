@@ -1057,8 +1057,8 @@ class ItMiiDomain {
             () -> checkAvailability(
                 namespace, appAvailability, managedServerPrefix, replicaCount, internalPort, appPath),
             String.format(
-                "Pod %s is not patched with image %s in namespace %s.",
-                namespace)));
+                "Application %s is not available on all managed servers after patching in namespace %s.",
+                appPath, namespace)));
   }
 
   private static Callable<Boolean> checkAvailability(
