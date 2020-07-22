@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.DbHandler.createPDB;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -63,6 +64,9 @@ public class DbUtils {
   private static final String RCUTYPE = "fmw";
   private static final String RCUPODNAME = "rcu";
   private static final String SYSPASSWORD = "Oradoc_db1";
+  private static final String RCUCONNECTSTRING =
+      "sfelts-1.subnet1ad2phx.devweblogicphx.oraclevcn.com:5521/rdbms.regress.rdbms.dev.us.oracle.com";
+
 
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
@@ -71,6 +75,7 @@ public class DbUtils {
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(15, MINUTES).await();
+
   /**
    * Start Oracle DB instance, create rcu pod and load database schema in the specified namespace.
    *
@@ -100,6 +105,35 @@ public class DbUtils {
     createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace, isUseSecret);
 
   }
+
+  /**
+   * Start Oracle PDB instance, create rcu pod and load database schema in the specified namespace.
+   *
+   * @param fmwImage image name of FMW
+   * @param rcuSchemaPrefix rcu SchemaPrefix
+   * @param rcuNamespace namespace where DB and RCU schema are going to start
+   * @throws Exception if any error occurs when setting up RCU database
+   */
+
+  public static void setupPDBandRCUschema(String pdbName, String fmwImage, String rcuSchemaPrefix, String rcuNamespace,
+      boolean isUseSecret) throws ApiException {
+    LoggingFacade logger = getLogger();
+    // create pull secrets when running in non Kind Kubernetes cluster
+    if (isUseSecret) {
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, rcuNamespace);
+    }
+
+    logger.info("Create PDB: {0}", pdbName);
+    boolean createPdb = createPDB(pdbName);
+    assertTrue(createPdb, String.format("Create PDB failed for pdbName: %s ", pdbName));
+    /*rcuConnectString = getRcuConnectString(pdbName);
+    logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, RCU connect string: {2}, "
+        + "dbNamespace: {3}, isUseSecret {4}:", fmwImage, rcuSchemaPrefix, rcuConnectString, rcuNamespace, isUseSecret);
+    createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, rcuNamespace, isUseSecret);*/
+
+  }
+
 
   /**
    * Start Oracle DB pod and service in the specified namespace.
