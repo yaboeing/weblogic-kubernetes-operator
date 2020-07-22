@@ -1096,10 +1096,10 @@ class ItMiiDomain {
       appAvailability.add(count);
 
       if (count == 0) {
-        logger.info("V1 application not available!");
+        logger.info("Neither V1 nor V2 application available!");
         return true;
       } else {
-        logger.fine("V1 application available count = " + count);
+        logger.fine("Either V1 or V2 application available count = " + count);
       }
       return v2AppAvailable;
     };
