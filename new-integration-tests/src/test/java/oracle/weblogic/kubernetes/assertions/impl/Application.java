@@ -39,7 +39,7 @@ public class Application {
 
     // access the application in the given pod
     String[] cmd = new String[] {
-        "/usr/bin/curl",
+        "/usr/bin/curl -m 60",
         String.format("http://%s:%s/%s",
             podName,
             port,
@@ -50,7 +50,7 @@ public class Application {
           namespace,
           podName, 
           "weblogic-server", // container name
-          false, // redirectOutput
+          true, // redirectOutput
           cmd);
       if (execResult.exitValue() == 0
           && execResult.stdout() != null 
