@@ -1099,7 +1099,7 @@ class ItMiiDomain {
         logger.info("Neither V1 nor V2 application available!");
         return true;
       } else {
-        logger.fine("Either V1 or V2 application available count = " + count);
+        logger.fine("Either V1 or V2 application, or both available count = " + count);
       }
       return v2AppAvailable;
     };
