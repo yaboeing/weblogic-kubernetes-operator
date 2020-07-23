@@ -80,7 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodKubectl;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
@@ -956,7 +956,7 @@ class ItMiiDomain {
             namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
+        .until(() -> appAccessibleInPodKubectl(
                 namespace,
                 podName, 
                 internalPort, 
@@ -1045,13 +1045,17 @@ class ItMiiDomain {
       String appPath
   ) {
     boolean v2AppAvailable = false;
+    final int INTERVAL = 400;
+    final int MAX_WAIT = 36000000;
+    int maxIterations = MAX_WAIT / INTERVAL;
+    int iterationCount = 0;
 
     // Access the pod periodically to check application's availability across the duration
     // of patching the domain with newer version of the application.
-    while (!v2AppAvailable)  {
+    while (!v2AppAvailable && iterationCount++ < maxIterations)  {
       v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
-        v2AppAvailable = v2AppAvailable && appAccessibleInPod(
+        v2AppAvailable = v2AppAvailable && appAccessibleInPodKubectl(
                             namespace,
                             managedServerPrefix + i, 
                             internalPort, 
@@ -1061,7 +1065,7 @@ class ItMiiDomain {
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
-        if (appAccessibleInPod(
+        if (appAccessibleInPodKubectl(
             namespace,
             managedServerPrefix + i, 
             internalPort, 
@@ -1079,7 +1083,7 @@ class ItMiiDomain {
         logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
       }
       try {
-        TimeUnit.MILLISECONDS.sleep(200);
+        TimeUnit.MILLISECONDS.sleep(INTERVAL);
       } catch (InterruptedException ie) {
         // do nothing
       }
