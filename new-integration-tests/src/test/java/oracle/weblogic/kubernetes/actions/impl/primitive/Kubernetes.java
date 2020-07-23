@@ -2329,7 +2329,7 @@ public class Kubernetes {
       proc.waitFor();
 
       // wait for reading thread to finish any remaining output
-      out.join();
+      out.join(1200);
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
