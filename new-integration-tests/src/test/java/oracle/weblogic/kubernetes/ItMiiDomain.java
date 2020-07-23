@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+//import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -1050,7 +1050,7 @@ class ItMiiDomain {
     with().pollDelay(100, MILLISECONDS)
         .and().with().pollInterval(400, MILLISECONDS)
         .atMost(10, MINUTES).await().conditionEvaluationListener(
-        condition -> logger.info("Waiting for application to be patched in namespace {0} "
+            condition -> logger.info("Waiting for application to be patched in namespace {0} "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
             namespace,
             condition.getElapsedTimeInMS(),
