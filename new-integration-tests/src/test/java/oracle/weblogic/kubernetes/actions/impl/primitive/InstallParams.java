@@ -15,7 +15,10 @@ public class InstallParams {
   // The version of the tool
   private String version;
   
-  // The download site location
+  // The download site location or local file system location to get the installer
+  // Examples:
+  // https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.3/weblogic-deploy.zip
+  // https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5/imagetool.zip
   private String location;
   
   // The installer file name
