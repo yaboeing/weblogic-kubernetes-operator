@@ -216,6 +216,7 @@ public class DomainProcessorTest {
   @Test
   public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
+
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);

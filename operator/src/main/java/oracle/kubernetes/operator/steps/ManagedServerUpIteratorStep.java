@@ -90,19 +90,19 @@ public class ManagedServerUpIteratorStep extends Step {
             .filter(ssi -> !isServerInCluster(ssi))
             .map(ssi -> createManagedServerUpDetails(packet, ssi)).collect(Collectors.toList());
 
-    Map<String, StartClusteredServersStepFactory> stepFactories =
-            getStartClusteredServersStepFactories(startupInfos, packet);
     Collection<StepAndPacket> work = new ArrayList<>();
     if (!startDetails.isEmpty()) {
       work.add(
               new StepAndPacket(
                       new StartManagedServersStep(null, startDetails, null), packet));
     }
-    for (Map.Entry<String, StartClusteredServersStepFactory> entry : stepFactories.entrySet()) {
+
+    for (Map.Entry<String, StartClusteredServersStepFactory> entry
+            : getStartClusteredServersStepFactories(startupInfos, packet).entrySet()) {
       work.add(
               new StepAndPacket(
                       new StartManagedServersStep(entry.getKey(), entry.getValue().getServerStartsStepAndPackets(),
-                              null), packet));
+                              null), packet.clone()));
     }
 
     if (!work.isEmpty()) {
@@ -190,11 +190,13 @@ public class ManagedServerUpIteratorStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (this.countScheduled < PodHelper.getScheduledPods(info).size()) {
+      int scheduledPods = PodHelper.getScheduledPods(info).size();
+      if (this.countScheduled < scheduledPods) {
         if (canScheduleConcurrently(PodHelper.getReadyPods(info).size())) {
           Collection<StepAndPacket> servers = Arrays.asList(startDetailsQueue.poll());
           this.countScheduled++;
-          return doNext(NEXT_STEP_FACTORY.startClusteredServersStep(this, packet, servers), packet);
+          //return doNext(NEXT_STEP_FACTORY.startClusteredServersStep(this, packet, servers), packet);
+          return doForkJoin(this, packet, servers);
         }
       }
       if (startDetailsQueue.size() > 0) {
@@ -245,8 +247,8 @@ public class ManagedServerUpIteratorStep extends Step {
 
     StartClusteredServersStep(Step step, Packet packet, Collection<StepAndPacket> serversToStart) {
       super(null);
-      this.packet = packet;
       this.step = step;
+      this.packet = packet;
       this.serversToStart = serversToStart;
     }
 

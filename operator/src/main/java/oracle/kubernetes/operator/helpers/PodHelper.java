@@ -120,7 +120,7 @@ public class PodHelper {
   }
 
   /**
-   * Change pod status to scheduled.
+   * Helper method for tests to set pod status to scheduled.
    * @param info Domain presence info
    * @param serverName Name of server pod to be changed
    */
@@ -128,13 +128,13 @@ public class PodHelper {
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       V1Pod pod = entry.getValue().getPod().get();
       if (pod.getMetadata().getName().contains(serverName)) {
-        PodHelper.setScheduledStatus(pod);
+        setScheduledStatus(pod);
       }
     }
   }
 
   /**
-   * Change pod status to ready.
+   * Helper method for tests to set pod status to ready.
    * @param info Domain presence info
    * @param serverName Name of server pod to be changed
    */
@@ -142,32 +142,29 @@ public class PodHelper {
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       V1Pod pod = entry.getValue().getPod().get();
       if (pod.getMetadata().getName().contains(serverName)) {
-        PodHelper.setReadyStatus(pod);
+        setReadyStatus(pod);
       }
     }
   }
 
   /**
-   * get if pod is in scheduled state.
+   * Helper method for tests to set pod status to scheduled.
    * @param pod pod
-   * @return true, if pod is scheduled
    */
-  public static boolean setScheduledStatus(V1Pod pod) {
+  public static void setScheduledStatus(V1Pod pod) {
     V1PodSpec status = pod.getSpec();
     if (status != null) {
       status.setNodeName("Node1");
     } else {
       pod.spec(new V1PodSpec().nodeName("Node1"));
     }
-    return true;
   }
 
   /**
-   * get if pod is in scheduled state.
+   * Helper method for tests to set pod status to ready.
    * @param pod pod
-   * @return true, if pod is scheduled
    */
-  public static boolean setReadyStatus(V1Pod pod) {
+  public static void setReadyStatus(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       status.phase("RUNNING").addConditionsItem(new V1PodCondition().type("Ready").status("True"));
@@ -175,7 +172,6 @@ public class PodHelper {
       pod.status(new V1PodStatus().phase("Running")
               .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
     }
-    return true;
   }
 
   /**
