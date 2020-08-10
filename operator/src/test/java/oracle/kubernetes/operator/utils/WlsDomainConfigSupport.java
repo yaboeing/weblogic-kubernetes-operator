@@ -202,7 +202,7 @@ public class WlsDomainConfigSupport {
     }
 
     void addServer(String serverName) {
-      addServer(serverName, null);
+      addServer(serverName, 8001);
     }
 
     void addServer(String serverName, Integer listenPort) {
