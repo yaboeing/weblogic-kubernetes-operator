@@ -94,7 +94,7 @@ public class ManagedServerUpIteratorStep extends Step {
     if (!startDetails.isEmpty()) {
       work.add(
               new StepAndPacket(
-                      new StartManagedServersStep(null, startDetails, null), packet));
+                      new StartManagedServersStep(null, startDetails, startupInfos, null), packet));
     }
 
     for (Map.Entry<String, StartClusteredServersStepFactory> entry
@@ -102,7 +102,7 @@ public class ManagedServerUpIteratorStep extends Step {
       work.add(
               new StepAndPacket(
                       new StartManagedServersStep(entry.getKey(), entry.getValue().getServerStartsStepAndPackets(),
-                              null), packet.clone()));
+                              startupInfos, null), packet.clone()));
     }
 
     if (!work.isEmpty()) {
@@ -159,13 +159,16 @@ public class ManagedServerUpIteratorStep extends Step {
     final Collection<StepAndPacket> startDetails;
     final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<StepAndPacket>();
     final String clusterName;
+    final Collection<ServerStartupInfo> ssi;
     int countScheduled = 0;
     int maxConcurrency = 1;
 
-    StartManagedServersStep(String clusterName, Collection<StepAndPacket> startDetails, Step next) {
+    StartManagedServersStep(String clusterName, Collection<StepAndPacket> startDetails,
+                            Collection<ServerStartupInfo> ssi, Step next) {
       super(next);
       this.clusterName = clusterName;
       this.startDetails = startDetails;
+      this.ssi = ssi;
       startDetails.forEach(sp -> add(sp));
     }
 
@@ -190,10 +193,27 @@ public class ManagedServerUpIteratorStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      int scheduledPods = PodHelper.getScheduledPods(info).size();
+      int scheduledPods = PodHelper.getScheduledPods(info, clusterName).size();
+      int readyPods = PodHelper.getReadyPods(info, clusterName).size();
+      LOGGER.info("DEBUG: In StartManagedServersStep.. clusterName is "
+              + clusterName + ", countScheduled => " + countScheduled
+              + ", scheduledPods => " + scheduledPods
+              + ", readyPods => " + readyPods
+              + ", maxConcurrency => " + maxConcurrency);
+
+      StepAndPacket sap = startDetailsQueue.peek();
+      if ((sap != null) && (sap.step != null) && (sap.step.getNext() instanceof ServerDownStep)) {
+        LOGGER.info("DEBUG: instance of server down");
+        Collection<StepAndPacket> servers = Arrays.asList(startDetailsQueue.poll());
+        return doForkJoin(this, packet, servers);
+      } else if (startDetailsQueue.size() == 0) {
+        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
+      }
+
       if (this.countScheduled < scheduledPods) {
-        if (canScheduleConcurrently(PodHelper.getReadyPods(info).size())) {
+        if (canScheduleConcurrently(readyPods)) {
           Collection<StepAndPacket> servers = Arrays.asList(startDetailsQueue.poll());
+          LOGGER.info("DEBUG: In StartManagedServersStep.. clusterName is" + clusterName + ".. scheduling server ");
           this.countScheduled++;
           //return doNext(NEXT_STEP_FACTORY.startClusteredServersStep(this, packet, servers), packet);
           return doForkJoin(this, packet, servers);
@@ -207,8 +227,11 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     private boolean canScheduleConcurrently(int readyManagedPods) {
-      return ((maxConcurrency > 0) && (this.countScheduled < (maxConcurrency + readyManagedPods - 1)))
-          || (maxConcurrency == 0);
+      boolean canScheduleConcurrently = ((maxConcurrency > 0) && (this.countScheduled < (maxConcurrency + readyManagedPods - 1)))
+              || (maxConcurrency == 0);
+      LOGGER.info("DEBUG: In StartManagedServersStep.. clusterName is.. " + clusterName + " canScheduleConcurrently returning "
+              + canScheduleConcurrently);
+      return canScheduleConcurrently;
     }
   }
 

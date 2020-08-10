@@ -3,12 +3,8 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -20,14 +16,7 @@ import javax.annotation.Nullable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServicePort;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.*;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -173,9 +162,12 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainConfiguredForMaxServers_establishMatchingPresence() {
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS).withNodeName("Node1");
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    //V1Pod admin = testSupport.getResourceWithName(POD, "admin");
+    testSupport.doOnCreate(POD, p -> scheduleAssignToNode((V1Pod) p));
+
     processor.createMakeRightOperation(info).execute();
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
@@ -184,6 +176,16 @@ public class DomainProcessorTest {
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  void scheduleAssignToNode(V1Pod pod) {
+    testSupport.schedule(()-> setNodeName(pod), getRandomDelay(), TimeUnit.MILLISECONDS);
+  }
+  void setNodeName(V1Pod pod) {
+    Objects.requireNonNull(pod.getSpec()).setNodeName("Node");
+  }
+  long getRandomDelay() {
+    return 20 + (long) (Math.random() * 100);
   }
 
   @Test
@@ -216,16 +218,27 @@ public class DomainProcessorTest {
   @Test
   public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
-
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
+    DomainPresenceInfo info = testSupport.getPacket().getSpi(DomainPresenceInfo.class);
+    //schedulePod(info, "test-domain-managed-server1", "Node1");
+    //schedulePod(info, "test-domain-managed-server2", "Node2");
+    //testSupport.setTime(10, TimeUnit.SECONDS);
+
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
+//    testSupport.setTime(10, TimeUnit.SECONDS);
+//    testSupport.setTime(10, TimeUnit.SECONDS);
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
+
+  private void schedulePod(DomainPresenceInfo info, String serverName, String nodeName) {
+    info.getServerPod(serverName).getSpec().setNodeName(nodeName);
+  }
+
 
   @Test
   public void whenDomainShutDown_removeAllPodsAndServices() {
@@ -455,6 +468,12 @@ public class DomainProcessorTest {
   public void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+
+    List<V1Pod> poList = testSupport.getResources(POD);
+    V1Pod ms1 = testSupport.getResourceWithName(POD, "test-domain-managed-server1");
+    V1Pod ms2 = testSupport.getResourceWithName(POD, "test-domain-managed-server2");
+    ms1.status(null);
+    ms2.status(null);
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
     domainConfigurator.configureServer(getManagedServerName(1)).withAdditionalVolume("vol1", "/path");
     domainConfigurator.configureServer(getManagedServerName(2)).withAdditionalVolume("vol2", "/path");
@@ -551,7 +570,8 @@ public class DomainProcessorTest {
   }
 
   private List<V1Pod> getRunningPods() {
-    return testSupport.getResources(KubernetesTestSupport.POD);
+    List<V1Pod> podList = testSupport.getResources(KubernetesTestSupport.POD);
+    return podList;
   }
 
   private void defineServerResources(String serverName) {
@@ -568,11 +588,17 @@ public class DomainProcessorTest {
 
     if (ADMIN_NAME.equals(serverName)) {
       packet.put(ProcessingConstants.SERVER_SCAN, domainConfig.getServerConfig(serverName));
-      return PodHelper.createAdminServerPodModel(packet);
+      V1Pod po = PodHelper.createAdminServerPodModel(packet);
+      po.status(new V1PodStatus().phase("Running").addConditionsItem(new V1PodCondition().status("True").type("Ready")));
+      po.getSpec().setNodeName("node1");
+      return po;
     } else {
       packet.put(ProcessingConstants.CLUSTER_NAME, CLUSTER);
       packet.put(ProcessingConstants.SERVER_SCAN, getClusteredServerConfig(serverName));
-      return PodHelper.createManagedServerPodModel(packet);
+      V1Pod po = PodHelper.createManagedServerPodModel(packet);
+      po.status(new V1PodStatus().phase("Running").addConditionsItem(new V1PodCondition().status("True").type("Ready")));
+      po.getSpec().setNodeName("node1");
+      return po;
     }
   }
 

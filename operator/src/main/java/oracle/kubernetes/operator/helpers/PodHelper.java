@@ -90,13 +90,16 @@ public class PodHelper {
    * @param info Domain presence info
    * @return list containing scheduled pods
    */
-  public static List<String> getScheduledPods(DomainPresenceInfo info) {
+  public static List<String> getScheduledPods(DomainPresenceInfo info, String clusterName) {
     // These are presently scheduled servers
     List<String> scheduledServers = new ArrayList<>();
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       V1Pod pod = entry.getValue().getPod().get();
       if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getScheduledStatus(pod)) {
-        scheduledServers.add(entry.getKey());
+        String wlsClusterName = pod.getMetadata().getLabels().get("weblogic.clusterName");
+        if((wlsClusterName == null) || (wlsClusterName.contains(clusterName))) {
+            scheduledServers.add(entry.getKey());
+        }
       }
     }
     return scheduledServers;
@@ -107,13 +110,16 @@ public class PodHelper {
    * @param info Domain presence info
    * @return list containing ready pods
    */
-  public static List<String> getReadyPods(DomainPresenceInfo info) {
+  public static List<String> getReadyPods(DomainPresenceInfo info, String clusterName) {
     // These are presently Ready servers
     List<String> readyServers = new ArrayList<>();
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       V1Pod pod = entry.getValue().getPod().get();
       if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        readyServers.add(entry.getKey());
+        String wlsClusterName = pod.getMetadata().getLabels().get("weblogic.clusterName");
+        if((wlsClusterName == null) || (wlsClusterName.contains(clusterName))) {
+          readyServers.add(entry.getKey());
+        }
       }
     }
     return readyServers;
