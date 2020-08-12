@@ -5,7 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.util.HashMap;
 import java.util.List;
-//import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -20,7 +20,6 @@ import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.Shutdown;
-//import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -30,19 +29,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-//import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-//import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -59,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test is used for testing pods being shutdowned by some properties change.
+ * This test is to verify shutdown rules when shutdown options of serverPos is defined.
  */
 @DisplayName("Test pods are being shutdowned by some properties change")
 @IntegrationTest
@@ -102,6 +96,27 @@ class ItPodsShutdown {
     createAndVerifyMiiDomain();
   }
 
+  /**
+   * This test is to verify shutdown rules when shutdown options of serverPos is defined
+   * at domain level, adminServer level and cluster and managedServer level.
+   * step 1: Create domain with only one managed server with the following settings
+   * domain: SHUTDOWN_TYPE -> Gracefu.
+   * adminServer: SHUTDOWN_TYPE -> Forced.
+   *              SHUTDOWN_IGNORE_SESSIONS -> true.
+   *              SHUTDOWN_TIMEOUT -> 40.
+   * cluster: SHUTDOWN_IGNORE_SESSIONS -> true.
+   *          SHUTDOWN_TIMEOUT -> 80.
+   * managedServer1: SHUTDOWN_TIMEOUT -> 100.
+   * step2: Scale cluster with two managed servers.
+   * step 3: Verify shutdown properties of admin server, managedServer1 and newly scaledup managedServer2.
+   * Domain level "Graceful" shutdown overrides server level setting and is used for all servers.
+   * So adminServer has "Graceful" SHUTDOWN_TYPE, default "false" SHUTDOWN_IGNORE_SESSIONS and
+   * configured "40" SHUTDOWN_TIMEOUT.
+   * Managed level setting overrides cluster level setting so for managedServer1 has configured "100"
+   * SHUTDOWN_TIMEOUT, cluster level "true" SHUTDOWN_IGNORE_SESSIONS  "true" and "Graceful" SHUTDOWN_TYPE.
+   * Newly scaled up managedServer2 takes setting from combination of domain level and cluster level
+   * with "Graceful" SHUTDOWN_TYPE, "true" SHUTDOWN_IGNORE_SESSIONS and default "30" SHUTDOWN_TIMEOUT
+   */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties defined at different levels ")
   public void testShutdownProps() {
@@ -112,7 +127,7 @@ class ItPodsShutdown {
             domainUid, domainNamespace));
 
     assertNotNull(domain1, domain1 + " is null");
-    assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
+    //assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
 
     assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, 2)))
         .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
@@ -120,6 +135,9 @@ class ItPodsShutdown {
         .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
               clusterName, domainUid, domainNamespace)
         .isTrue();
+    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+    
+    assertTrue(verifyServerShutdownProp(adminServerPodName, domainNamespace, "Graceful", "40", "false"));
     assertTrue(verifyServerShutdownProp(managedServerPrefix + 1, domainNamespace, "Graceful", "100", "true"));
     assertTrue(verifyServerShutdownProp(managedServerPrefix + 2, domainNamespace, "Graceful", "30", "true"));
   }
@@ -177,7 +195,6 @@ class ItPodsShutdown {
                 .addEnvItem(new V1EnvVar()
                     .name("SHUTDOWN_TYPE")
                     .value("Graceful")))
-            //   .shutdown(new Shutdown().timeoutSeconds(160L)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .serverPod(new ServerPod().shutdown(new Shutdown().shutdownType("Forced")))
@@ -195,8 +212,7 @@ class ItPodsShutdown {
                     .runtimeEncryptionSecret(encryptionSecretName)))
             .addManagedServersItem(new ManagedServer()
                 .serverName(managedServer1Name)
-                .serverPod(new ServerPod().shutdown(new Shutdown().timeoutSeconds(100L))))
-                .serverPod(new ServerPod().shutdown(new Shutdown().ignoreSessions(false))));
+                .serverPod(new ServerPod().shutdown(new Shutdown().timeoutSeconds(100L)))));
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
