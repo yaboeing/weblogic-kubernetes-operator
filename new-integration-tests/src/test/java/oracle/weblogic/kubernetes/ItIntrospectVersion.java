@@ -133,7 +133,7 @@ public class ItIntrospectVersion {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+      .atMost(10, MINUTES).await();
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
@@ -162,8 +162,8 @@ public class ItIntrospectVersion {
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
     // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
+    nodeportshttp = getNextFreePort(30109, 30405);
+    int nodeportshttps = getNextFreePort(30143, 30543);
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
@@ -219,7 +219,7 @@ public class ItIntrospectVersion {
     // in general the node port range has to be between 30,000 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30100
-    final int t3ChannelPort = getNextFreePort(30100, 32767);
+    final int t3ChannelPort = getNextFreePort(30172, 32767);
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
@@ -292,7 +292,17 @@ public class ItIntrospectVersion {
             .serverPod(new ServerPod() //serverpod
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.kernel.debug=true "
+                        + "-Dweblogic.debug.DebugMessaging=true "
+                        + "-Dweblogic.debug.DebugConnection=true "
+                        + "-Dweblogic.debug.DebugUnicastMessaging=true "
+                        + "-Dweblogic.debug.DebugClusterHeartbeats=true "
+                        + "-Dweblogic.debug.DebugJNDI=true "
+                        + "-Dweblogic.debug.DebugJNDIResolution=true "
+                        + "-Dweblogic.debug.DebugCluster=true "
+                        + "-Dweblogic.ResolveDNSName=true "
+                        + "-Dweblogic.MaxMessageSize=20000000"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -567,7 +577,7 @@ public class ItIntrospectVersion {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
-    
+
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
 
