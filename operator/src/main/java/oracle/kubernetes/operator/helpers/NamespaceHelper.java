@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -11,16 +10,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.annotation.Nonnull;
 
 import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.RequestParams;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
@@ -65,99 +61,41 @@ public class NamespaceHelper {
     return new NamespaceListContext(responseStep, labelSelector).createListStep();
   }
 
-  static class NamespaceListContext {
-    private final ResponseStep<V1NamespaceList> responseStep;
+  static class NamespaceListContext extends ChunkedListContext<V1NamespaceList, V1Namespace> {
     private final String labelSelector;
-    private final List<V1Namespace> namespaces = new ArrayList<>();
-    private String continueToken = "";
-    private String resourceVersion;
+
+    @Override
+    @Nonnull List<V1Namespace> getItems(V1NamespaceList list) {
+      return list.getItems();
+    }
+
+    @Override
+    @Nonnull V1ListMeta getListMetadata(V1NamespaceList list) {
+      return Objects.requireNonNull(list.getMetadata());
+    }
+
+    @Override
+    @Nonnull V1NamespaceList createList(V1ListMeta meta, List<V1Namespace> items) {
+      return new V1NamespaceList().metadata(meta).items(items);
+    }
+
+    @Override
+    @Nonnull Step createAsyncListStep(CallBuilder callBuilder, ResponseStep<V1NamespaceList> responseStep) {
+      return callBuilder.listNamespaceAsync(responseStep);
+    }
+
+    @Override
+    CallBuilder configureCallBuilder(CallBuilder callBuilder) {
+      return callBuilder.withLabelSelector(labelSelector);
+    }
 
     public NamespaceListContext(ResponseStep<V1NamespaceList> responseStep, String labelSelector) {
-      this.responseStep = responseStep;
+      super(responseStep);
       this.labelSelector = labelSelector;
     }
 
     Step createListStep() {
       return new NamespaceListStep();
-    }
-
-    ResponseStep<V1NamespaceList> createResponseStep() {
-      return new NamespaceListChunkedResponseStep();
-    }
-
-    boolean restartNeeded(String newResourceVersion) {
-      try {
-        return (resourceVersion != null && !resourceVersion.equals(newResourceVersion));
-      } finally {
-        resourceVersion = newResourceVersion;
-      }
-    }
-
-    class SuccessContextUpdate {
-      private final CallResponse<V1NamespaceList> callResponse;
-
-      public SuccessContextUpdate(CallResponse<V1NamespaceList> callResponse) {
-        this.callResponse = callResponse;
-        continueToken = getMetadata().getContinue();
-
-        if (restartNeeded(getMetadata().getResourceVersion())) {
-          namespaces.clear();
-        }
-        namespaces.addAll(callResponse.getResult().getItems());
-      }
-
-      private @Nonnull V1ListMeta getMetadata() {
-        return Objects.requireNonNull(callResponse.getResult().getMetadata());
-      }
-
-      @Nonnull
-      public CallResponse<V1NamespaceList> createSuccessResponse() {
-        return CallResponse.createSuccess(getRequestParams(), createResult(), getStatusCode());
-      }
-
-      private RequestParams getRequestParams() {
-        return callResponse.getRequestParams();
-      }
-
-      private V1NamespaceList createResult() {
-        return new V1NamespaceList().metadata(getMetadata()).items(namespaces);
-      }
-
-      private int getStatusCode() {
-        return callResponse.getStatusCode();
-      }
-
-      private boolean allItemsRetrieved() {
-        return Strings.isNullOrEmpty(continueToken);
-      }
-    }
-
-    class NamespaceListStep extends Step {
-      @Override
-      public NextAction apply(Packet packet) {
-        return doNext(createCallBuilder().listNamespaceAsync(createResponseStep()), packet);
-      }
-    }
-
-    private CallBuilder createCallBuilder() {
-      return new CallBuilder().withLabelSelector(labelSelector).withContinue(continueToken);
-    }
-
-    class NamespaceListChunkedResponseStep extends ResponseStep<V1NamespaceList> {
-      @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-        SuccessContextUpdate update = new SuccessContextUpdate(callResponse);
-        if (update.allItemsRetrieved()) {
-          return responseStep.onSuccess(packet, update.createSuccessResponse());
-        } else {
-          return doNext(createListStep(), packet);
-        }
-      }
-
-      @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-        return responseStep.onFailure(packet, callResponse);
-      }
     }
 
   }
