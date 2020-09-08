@@ -6,11 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.annotation.Nonnull;
 
 import com.google.common.base.Strings;
@@ -58,21 +56,11 @@ public class NamespaceHelper {
    * @param labelSelector an optional selector to include only certain namespaces
    */
   public static Step createNamespaceListStep(ResponseStep<V1NamespaceList> responseStep, String labelSelector) {
-    return new NamespaceListContext(responseStep, labelSelector).createListStep();
+    return new NamespaceListSupport(responseStep, labelSelector).createListStep();
   }
 
-  static class NamespaceListContext extends ChunkedListContext<V1NamespaceList, V1Namespace> {
+  static class NamespaceListSupport extends ChunkedListSupport<V1NamespaceList, V1Namespace> {
     private final String labelSelector;
-
-    @Override
-    @Nonnull List<V1Namespace> getItems(V1NamespaceList list) {
-      return list.getItems();
-    }
-
-    @Override
-    @Nonnull V1ListMeta getListMetadata(V1NamespaceList list) {
-      return Objects.requireNonNull(list.getMetadata());
-    }
 
     @Override
     @Nonnull V1NamespaceList createList(V1ListMeta meta, List<V1Namespace> items) {
@@ -89,7 +77,7 @@ public class NamespaceHelper {
       return callBuilder.withLabelSelector(labelSelector);
     }
 
-    public NamespaceListContext(ResponseStep<V1NamespaceList> responseStep, String labelSelector) {
+    public NamespaceListSupport(ResponseStep<V1NamespaceList> responseStep, String labelSelector) {
       super(responseStep);
       this.labelSelector = labelSelector;
     }

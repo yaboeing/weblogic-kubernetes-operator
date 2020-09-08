@@ -65,6 +65,11 @@ class CallParamsImpl implements CallParams {
     return resourceVersion;
   }
 
+  @Override
+  public String getContinueToken() {
+    return null;
+  }
+
   void setResourceVersion(String resourceVersion) {
     this.resourceVersion = resourceVersion;
   }

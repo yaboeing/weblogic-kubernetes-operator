@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 import okhttp3.Call;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
+import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallWrapper;
@@ -203,7 +204,7 @@ public class CallBuilder {
                   null,
                   callback));
 
-  private final ListParams listParams = new ListParams();
+  private final CallBuilderParams callParams = new CallBuilderParams();
   /* Namespaces */
   private final String resourceVersion = "";
   private Integer timeoutSeconds = 5;
@@ -310,9 +311,9 @@ public class CallBuilder {
                   requestParams.namespace,
                   pretty,
                   null,
-                  listParams.fieldSelector,
-                  listParams.labelSelector,
-                  listParams.limit,
+                  callParams.fieldSelector,
+                  callParams.labelSelector,
+                  callParams.limit,
                   resourceVersion,
                   timeoutSeconds,
                   watch);
@@ -411,7 +412,7 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withLabelSelectors(@Nonnull String... selectors) {
-    listParams.labelSelector = !ArrayUtils.isEmpty(selectors) ? String.join(",", selectors) : null;
+    callParams.labelSelector = !ArrayUtils.isEmpty(selectors) ? String.join(",", selectors) : null;
     return this;
   }
 
@@ -421,7 +422,7 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withLabelSelector(@Nullable String selector) {
-    listParams.labelSelector = selector;
+    callParams.labelSelector = selector;
     return this;
   }
 
@@ -431,7 +432,7 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withFieldSelector(String fieldSelector) {
-    listParams.fieldSelector = fieldSelector;
+    callParams.fieldSelector = fieldSelector;
     return this;
   }
 
@@ -441,7 +442,7 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withLimit(int limit) {
-    listParams.limit = limit;
+    callParams.limit = limit;
     return this;
   }
 
@@ -451,12 +452,12 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withContinue(String continueToken) {
-    listParams.continueToken = continueToken;
+    callParams.continueToken = continueToken;
     return this;
   }
 
   private void tuning(int limit, int timeoutSeconds, int maxRetryCount) {
-    listParams.limit = limit;
+    callParams.limit = limit;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
   }
@@ -539,10 +540,10 @@ public class CallBuilder {
         .listNamespacedDomainAsync(
             namespace,
             pretty,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -841,10 +842,10 @@ public class CallBuilder {
             namespace,
             pretty,
             allowWatchBookmarks,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1011,10 +1012,10 @@ public class CallBuilder {
             namespace,
             pretty,
             allowWatchBookmarks,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1152,12 +1153,12 @@ public class CallBuilder {
         .deleteCollectionNamespacedPodAsync(
             namespace,
             pretty,
-            listParams.continueToken,
+            callParams.continueToken,
             dryRun,
-            listParams.fieldSelector,
+            callParams.fieldSelector,
             gracePeriodSeconds,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.labelSelector,
+            callParams.limit,
             orphanDependents,
             propagationPolicy,
             resourceVersion,
@@ -1270,10 +1271,10 @@ public class CallBuilder {
             namespace,
             pretty,
             allowWatchBookmarks,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1434,10 +1435,10 @@ public class CallBuilder {
             namespace,
             pretty,
             allowWatchBookmarks,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1461,10 +1462,10 @@ public class CallBuilder {
         .listNamespaceAsync(
             pretty,
             allowWatchBookmarks,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1573,10 +1574,10 @@ public class CallBuilder {
             namespace,
             pretty,
             allowWatchBookmarks,
-            listParams.continueToken,
-            listParams.fieldSelector,
-            listParams.labelSelector,
-            listParams.limit,
+            callParams.continueToken,
+            callParams.fieldSelector,
+            callParams.labelSelector,
+            callParams.limit,
             resourceVersion,
             timeoutSeconds,
             watch,
@@ -1689,6 +1690,7 @@ public class CallBuilder {
 
   private <T> Step createRequestAsync(
       ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
+    requestParams.setCallParams(callParams);
     return STEP_FACTORY.createRequestAsync(
         next,
         requestParams,
@@ -1696,11 +1698,52 @@ public class CallBuilder {
         helper,
         timeoutSeconds,
         maxRetryCount,
-          listParams,
         resourceVersion);
   }
 
   private CancellableCall wrap(Call call) {
     return new CallWrapper(call);
+  }
+
+  static class CallBuilderParams implements CallParams {
+    String fieldSelector;
+    String continueToken = "";
+    String labelSelector;
+    Integer limit = 500;
+
+    @Override
+    public Integer getLimit() {
+      return limit;
+    }
+
+    @Override
+    public String getContinueToken() {
+      return continueToken;
+    }
+
+    @Override
+    public Integer getTimeoutSeconds() {
+      return null;
+    }
+
+    @Override
+    public String getFieldSelector() {
+      return fieldSelector;
+    }
+
+    @Override
+    public String getLabelSelector() {
+      return labelSelector;
+    }
+
+    @Override
+    public String getPretty() {
+      return null;
+    }
+
+    @Override
+    public String getResourceVersion() {
+      return null;
+    }
   }
 }

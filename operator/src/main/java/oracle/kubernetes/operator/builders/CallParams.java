@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.builders;
 
+import io.kubernetes.client.openapi.models.V1ListMeta;
+
 public interface CallParams {
   /**
    * Returns the limit on the number of updates to send in a single reply.
@@ -51,4 +53,10 @@ public interface CallParams {
    * @return the current setting. Defaults to null.
    */
   String getResourceVersion();
+
+  /**
+   * On a list call, if more items than the limit exist, Kubernetes will additionally set the field
+   * {@link V1ListMeta#getContinue()} which indicates that fact. The client must send it back to get more.
+   */
+  String getContinueToken();
 }

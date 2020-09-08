@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-abstract class ChunkedListContext<L extends KubernetesListObject,R extends KubernetesObject> {
+abstract class ChunkedListSupport<L extends KubernetesListObject,R extends KubernetesObject> {
 
   private final ResponseStep<L> responseStep;
   private final List<R> resources = new ArrayList<>();
@@ -25,13 +25,14 @@ abstract class ChunkedListContext<L extends KubernetesListObject,R extends Kuber
   private String resourceVersion;
 
   abstract @Nonnull L createList(V1ListMeta meta, List<R> items);
+
   abstract @Nonnull Step createAsyncListStep(CallBuilder callBuilder, ResponseStep<L> responseStep);
 
   CallBuilder configureCallBuilder(CallBuilder callBuilder) {
     return callBuilder;
   }
 
-  public ChunkedListContext(ResponseStep<L> responseStep) {
+  public ChunkedListSupport(ResponseStep<L> responseStep) {
     this.responseStep = responseStep;
   }
 
@@ -62,7 +63,12 @@ abstract class ChunkedListContext<L extends KubernetesListObject,R extends Kuber
       if (restartNeeded(getMetadata().getResourceVersion())) {
         resources.clear();
       }
-      resources.addAll((List<R>) callResponse.getResult().getItems());
+      resources.addAll(getItems(callResponse));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<R> getItems(CallResponse<L> callResponse) {
+      return (List<R>) callResponse.getResult().getItems();
     }
 
     @Nonnull

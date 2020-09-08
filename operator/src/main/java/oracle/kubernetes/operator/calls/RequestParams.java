@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.calls;
 
+import java.util.Optional;
+
 import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -10,6 +12,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 
 public final class RequestParams {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  public static final int DEFAULT_LIMIT = 10;
 
   public final String call;
   public final String namespace;
@@ -59,8 +62,24 @@ public final class RequestParams {
     this.callParams = callParams;
   }
 
+  public void setCallParams(CallParams callParams) {
+    this.callParams = callParams;
+  }
+
   public String getLabelSelector() {
-    return callParams.getLabelSelector();
+    return Optional.ofNullable(callParams).map(CallParams::getLabelSelector).orElse(null);
+  }
+
+  public String getFieldSelector() {
+    return Optional.ofNullable(callParams).map(CallParams::getFieldSelector).orElse(null);
+  }
+
+  public String getContinueToken() {
+    return Optional.ofNullable(callParams).map(CallParams::getContinueToken).orElse(null);
+  }
+
+  public int getLimit() {
+    return Optional.ofNullable(callParams).map(CallParams::getLimit).orElse(DEFAULT_LIMIT);
   }
 
   public String toString() {

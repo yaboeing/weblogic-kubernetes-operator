@@ -40,6 +40,8 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -94,7 +96,6 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-import static oracle.kubernetes.operator.helpers.KubernetesUtils.getListMetadata;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
@@ -210,7 +211,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   @SuppressWarnings("SameParameterValue")
   private <T> void support(
-      String resourceName, Class<?> resourceClass, Function<List<T>, Object> toList) {
+      String resourceName, Class<?> resourceClass, Function<List<T>, KubernetesListObject> toList) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
@@ -224,7 +225,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   private <T> NamespacedDataRepository<T> supportNamespaced(
-      String resourceName, Class<T> resourceClass, Function<List<T>, Object> toList) {
+      String resourceName, Class<T> resourceClass, Function<List<T>, KubernetesListObject> toList) {
     final NamespacedDataRepository<T> dataRepository = new NamespacedDataRepository<>(resourceClass, toList);
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, dataRepository);
@@ -552,9 +553,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
         ClientPool helper,
         int timeoutSeconds,
         int maxRetryCount,
-        ListParams listParams,
         String resourceVersion) {
-      return new KubernetesTestSupport.SimulatedResponseStep(next, requestParams, listParams);
+      return new KubernetesTestSupport.SimulatedResponseStep(next, requestParams);
     }
   }
 
@@ -595,7 +595,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private class DataRepository<T> {
     private final Map<String, T> data = new HashMap<>();
     private final Class<?> resourceType;
-    private Function<List<T>, Object> listFactory;
+    private Function<List<T>, KubernetesListObject> listFactory;
     private List<Consumer<T>> onCreateActions = new ArrayList<>();
     private List<Consumer<T>> onUpdateActions = new ArrayList<>();
     private List<Runnable> onListActions = new ArrayList<>();
@@ -608,7 +608,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       this.resourceType = resourceType;
     }
 
-    public DataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
+    public DataRepository(Class<?> resourceType, Function<List<T>, KubernetesListObject> listFactory) {
       this.resourceType = resourceType;
       this.listFactory = listFactory;
     }
@@ -668,20 +668,21 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return resource;
     }
 
-    Object listResources(String namespace, ListParams listParams) {
-      return listResources(listFactory, listParams);
+    KubernetesListObject listResources(String namespace, RequestParams requestParams) {
+      return listResources(listFactory, requestParams);
     }
 
     @Nonnull
-    private Object listResources(Function<List<T>, Object> listFactory, ListParams listParams) {
+    private KubernetesListObject listResources(
+          Function<List<T>, KubernetesListObject> listFactory, RequestParams requestParams) {
       Optional.ofNullable(listFactory).orElseThrow(this::notSupported);
 
       onListActions.forEach(Runnable::run);
-      if (startingNewListOperation(listParams.continueToken)) {
-        listProgress = new ListProgress(getResources(listParams));
+      if (startingNewListOperation(requestParams.getContinueToken())) {
+        listProgress = new ListProgress(getResources(requestParams));
       }
 
-      return toListResponse(listFactory, listParams);
+      return toListResponse(listFactory, requestParams);
     }
 
     private boolean startingNewListOperation(String continueToken) {
@@ -689,9 +690,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Nonnull
-    private Object toListResponse(Function<List<T>, Object> listFactory, ListParams listParams) {
-      final Object list = listFactory.apply(listProgress.getChunk(listParams.limit));
-      listProgress.updateMetadata(getListMetadata(list), resourceVersion);
+    private KubernetesListObject toListResponse(
+          Function<List<T>, KubernetesListObject> listFactory, RequestParams requestParams) {
+      final KubernetesListObject list = listFactory.apply(listProgress.getChunk(requestParams.getLimit()));
+      listProgress.updateMetadata(list.getMetadata(), resourceVersion);
       return list;
     }
 
@@ -699,15 +701,23 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return new UnsupportedOperationException("list operation not supported");
     }
 
-    List<T> getResources(ListParams listParams) {
+    List<T> getResources() {
+      return new ArrayList<>(data.values());
+    }
+
+    List<T> getResources(RequestParams requestParams) {
       return data.values().stream()
-          .filter(withFields(listParams.getFieldSelector()))
-          .filter(withLabels(listParams.getLabelSelectors()))
+          .filter(withFields(requestParams.getFieldSelector()))
+          .filter(withLabels(getLabelSelectors(requestParams)))
           .collect(Collectors.toList());
     }
 
-    List<T> getResources() {
-      return new ArrayList<>(data.values());
+    public String[] getLabelSelectors(RequestParams requestParams) {
+      return Optional.of(requestParams).map(RequestParams::getLabelSelector).map(this::splitSelector).orElse(null);
+    }
+
+    private String[] splitSelector(String selector) {
+      return selector.split(",");
     }
 
     private Predicate<Object> withLabels(String[] labelSelectors) {
@@ -859,7 +869,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     V1ObjectMeta getMetadata(@Nonnull Object resource) {
-      return KubernetesUtils.getResourceMetadata(resource);
+      return ((KubernetesObject) resource).getMetadata();
     }
 
     private void setName(@Nonnull Object resource, String name) {
@@ -971,9 +981,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private class NamespacedDataRepository<T> extends DataRepository<T> {
     private final Map<String, DataRepository<T>> repositories = new HashMap<>();
     private final Class<?> resourceType;
-    private final Function<List<T>, Object> listFactory;
+    private final Function<List<T>, KubernetesListObject> listFactory;
 
-    NamespacedDataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
+    NamespacedDataRepository(Class<?> resourceType, Function<List<T>, KubernetesListObject> listFactory) {
       super(resourceType);
       this.resourceType = resourceType;
       this.listFactory = listFactory;
@@ -1024,8 +1034,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    Object listResources(String namespace, ListParams listParams) {
-      return inNamespace(namespace).listResources(listFactory, listParams);
+    KubernetesListObject listResources(String namespace, RequestParams requestParams) {
+      return inNamespace(namespace).listResources(listFactory, requestParams);
     }
 
     @Override
@@ -1040,18 +1050,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private class CallContext {
     private final RequestParams requestParams;
-    @Nonnull
-    private final ListParams listParams;
     private String resourceType;
     private Operation operation;
 
     CallContext(RequestParams requestParams) {
-      this(requestParams, new ListParams());
-    }
-
-    CallContext(RequestParams requestParams, @Nonnull ListParams listParams) {
       this.requestParams = requestParams;
-      this.listParams = listParams;
 
       parseCallName(requestParams.call);
     }
@@ -1122,7 +1125,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private <T> Object listResources(DataRepository<T> dataRepository) {
-      return dataRepository.listResources(requestParams.namespace, listParams);
+      return dataRepository.listResources(requestParams.namespace, requestParams);
     }
 
     private <T> T readResource(DataRepository<T> dataRepository) {
@@ -1138,9 +1141,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private final CallContext callContext;
 
     SimulatedResponseStep(
-          Step next, RequestParams requestParams, ListParams listParams) {
+          Step next, RequestParams requestParams) {
       super(next);
-      callContext = new CallContext(requestParams, listParams);
+      callContext = new CallContext(requestParams);
     }
 
     @Override

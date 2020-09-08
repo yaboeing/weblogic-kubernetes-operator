@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.ListParams;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
@@ -50,7 +49,6 @@ public class AsyncRequestStepTest {
           helper,
           TIMEOUT_SECONDS,
           MAX_RETRY_COUNT,
-          new ListParams(),
           null);
   private final List<Memento> mementos = new ArrayList<>();
 

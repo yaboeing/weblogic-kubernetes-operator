@@ -15,6 +15,5 @@ public interface AsyncRequestStepFactory {
       ClientPool helper,
       int timeoutSeconds,
       int maxRetryCount,
-      ListParams listParams,
       String resourceVersion);
 }

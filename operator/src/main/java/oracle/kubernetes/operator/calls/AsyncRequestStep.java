@@ -16,7 +16,6 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ListParams;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -62,7 +61,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
    * @param helper Client pool
    * @param timeoutSeconds Timeout
    * @param maxRetryCount Max retry count
-   * @param listParams parameters to control list operations
    * @param resourceVersion Resource version
    */
   public AsyncRequestStep(
@@ -72,7 +70,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       ClientPool helper,
       int timeoutSeconds,
       int maxRetryCount,
-      ListParams listParams,
       String resourceVersion) {
     super(next);
     this.helper = helper;
@@ -80,8 +77,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     this.factory = factory;
     this.timeoutSeconds = timeoutSeconds;
     this.maxRetryCount = maxRetryCount;
-    this.fieldSelector = listParams.fieldSelector;
-    this.labelSelector = listParams.labelSelector;
+    this.fieldSelector = requestParams.getFieldSelector();
+    this.labelSelector = requestParams.getLabelSelector();
     this.resourceVersion = resourceVersion;
 
     // TODO, RJE: consider reimplementing the connection between the response and request steps using just
