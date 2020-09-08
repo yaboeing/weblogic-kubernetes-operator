@@ -8,6 +8,8 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import com.google.common.base.Strings;
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -15,15 +17,13 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-abstract class ChunkedListContext<L,R> {
+abstract class ChunkedListContext<L extends KubernetesListObject,R extends KubernetesObject> {
 
   private final ResponseStep<L> responseStep;
   private final List<R> resources = new ArrayList<>();
   private String continueToken = "";
   private String resourceVersion;
 
-  abstract @Nonnull List<R> getItems(L list);
-  abstract @Nonnull V1ListMeta getListMetadata(L list);
   abstract @Nonnull L createList(V1ListMeta meta, List<R> items);
   abstract @Nonnull Step createAsyncListStep(CallBuilder callBuilder, ResponseStep<L> responseStep);
 
@@ -62,12 +62,12 @@ abstract class ChunkedListContext<L,R> {
       if (restartNeeded(getMetadata().getResourceVersion())) {
         resources.clear();
       }
-      resources.addAll(getItems(callResponse.getResult()));
+      resources.addAll((List<R>) callResponse.getResult().getItems());
     }
 
     @Nonnull
     private V1ListMeta getMetadata() {
-      return getListMetadata(callResponse.getResult());
+      return callResponse.getResult().getMetadata();
     }
 
     @Nonnull
