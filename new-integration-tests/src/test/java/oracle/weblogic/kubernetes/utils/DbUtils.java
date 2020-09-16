@@ -39,15 +39,21 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -87,9 +93,15 @@ public class DbUtils {
       int dbPort, String dbUrl, boolean isUseSecret) throws ApiException {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
+    /*if (isUseSecret) {
       CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
+    }*/
+    if (isUseSecret) {
+      createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD,
+          REPO_EMAIL, REPO_REGISTRY, REPO_SECRET_NAME, dbNamespace);
+      logger.info("Docker registry secret {0} created successfully in namespace {1}",
+          REPO_SECRET_NAME, dbNamespace);
     }
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, isUseSecret: {3}",
@@ -195,9 +207,13 @@ public class DbUtils {
                     .restartPolicy("Always")
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    /*.imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
+                        : null))));*/
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(REPO_SECRET_NAME))
                         : null))));
 
     logger.info("Create deployment for Oracle DB in namespace {0}",
@@ -295,9 +311,13 @@ public class DbUtils {
                     .imagePullPolicy("IfNotPresent")
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            /*.imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
+                        : null));*/
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(REPO_SECRET_NAME))
                         : null));
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);

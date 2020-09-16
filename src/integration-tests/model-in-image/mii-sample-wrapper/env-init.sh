@@ -33,10 +33,16 @@ DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
 
+#if [ "$WDT_DOMAIN_TYPE" = "WLS" ]; then
+#  defaultBaseImage="container-registry.oracle.com/middleware/weblogic"
+#else
+#  defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
+#fi
+
 if [ "$WDT_DOMAIN_TYPE" = "WLS" ]; then
-  defaultBaseImage="container-registry.oracle.com/middleware/weblogic"
+  defaultBaseImage="phx.ocir.io/weblogick8s/test-images/weblogic"
 else
-  defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
+  defaultBaseImage="phx.ocir.io/weblogick8s/test-images/fmw-infrastructure"
 fi
 
 BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$defaultBaseImage}"

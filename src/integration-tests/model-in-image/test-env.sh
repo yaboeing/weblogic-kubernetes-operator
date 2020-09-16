@@ -30,7 +30,7 @@ export WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 # ::: DB Settings (needed if WDT_DOMAIN_TYPE is JRF)
 export DB_NAMESPACE=${DB_NAMESPACE:-default}
 export DB_NODE_PORT=${DB_NODE_PORT:-30011}
-export DB_IMAGE_NAME=${DB_IMAGE_NAME:-container-registry.oracle.com/database/enterprise}
+export DB_IMAGE_NAME=${DB_IMAGE_NAME:-phx.ocir.io/weblogick8s/test-images/database/enterprise}
 export DB_IMAGE_TAG=${DB_IMAGE_TAG:-12.2.0.1-slim}
 export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 

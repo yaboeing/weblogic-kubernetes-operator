@@ -2808,9 +2808,13 @@ public class CommonTestUtils {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                    /*.imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
+                        : null))));*/
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(REPO_SECRET_NAME))
                         : null))));
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");

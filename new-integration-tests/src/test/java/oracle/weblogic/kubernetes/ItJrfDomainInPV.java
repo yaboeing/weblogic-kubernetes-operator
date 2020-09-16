@@ -48,11 +48,17 @@ import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -127,10 +133,17 @@ public class ItJrfDomainInPV {
     jrfDomainNamespace = namespaces.get(2);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
+    /*if (KIND_REPO != null) {
       dbImage = KIND_REPO + DB_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
           + ":" + DB_IMAGE_TAG;
       fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
+          + ":" + JRF_BASE_IMAGE_TAG;
+      isUseSecret = false;
+    }*/
+    if (KIND_REPO != null) {
+      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(REPO_DEFAULT.length())
+          + ":" + DB_IMAGE_TAG;
+      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(REPO_DEFAULT.length())
           + ":" + JRF_BASE_IMAGE_TAG;
       isUseSecret = false;
     }
@@ -170,10 +183,18 @@ public class ItJrfDomainInPV {
     final String pvcName = domainUid + "-pvc";
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
+    /*if (isUseSecret) {
       createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, jrfDomainNamespace);
+    }*/
+    if (isUseSecret) {
+      createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD,
+          REPO_EMAIL, REPO_REGISTRY, REPO_SECRET_NAME, jrfDomainNamespace);
+      logger.info("Docker registry secret {0} created successfully in namespace {1}",
+          REPO_SECRET_NAME, jrfDomainNamespace);
     }
+
+
 
     // create JRF domain credential secret
     createSecretWithUsernamePassword(wlSecretName, jrfDomainNamespace,
@@ -237,9 +258,13 @@ public class ItJrfDomainInPV {
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(fmwImage)
             .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
+            /*.imagePullSecrets(isUseSecret ? Arrays.asList(
                 new V1LocalObjectReference()
                     .name(OCR_SECRET_NAME))
+                : null)*/
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(REPO_SECRET_NAME))
                 : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)

@@ -43,9 +43,10 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYP
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+//import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+//import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -136,7 +137,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
 
         // docker login to OCR if OCR_USERNAME and OCR_PASSWORD is provided in env var
-        if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
+        /*if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
           withStandardRetryPolicy
               .conditionEvaluationListener(
                   condition -> logger.info("Waiting for docker login to be successful"
@@ -169,6 +170,43 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
                 .until(pullImageFromOcrAndPushToKind(image)
+                );
+          }
+        }*/
+
+        if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+          withStandardRetryPolicy
+              .conditionEvaluationListener(
+                  condition -> logger.info("Waiting for docker login to be successful"
+                          + "(elapsed time {0} ms, remaining time {1} ms)",
+                      condition.getElapsedTimeInMS(),
+                      condition.getRemainingTimeInMS()))
+              .until(() -> dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD));
+        }
+
+        // The following code is for pulling WLS images if running tests in Kind cluster
+        if (KIND_REPO != null) {
+          // The kind clusters can't pull images from OCR using the image pull secret.
+          // It may be a containerd bug. We are going to workaround this issue.
+          // The workaround will be to:
+          //   1. docker login
+          //   2. docker pull
+          //   3. docker tag with the KIND_REPO value
+          //   4. docker push this new image name
+          //   5. use this image name to create the domain resource
+          Collection<String> images = new ArrayList<>();
+          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
+          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+
+          for (String image : images) {
+            withStandardRetryPolicy
+                .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for pullImageFromOcirAndPushToKind for image {0} to be successful"
+                            + "(elapsed time {1} ms, remaining time {2} ms)", image,
+                        condition.getElapsedTimeInMS(),
+                        condition.getRemainingTimeInMS()))
+                .until(pullImageFromOcirAndPushToKind(image)
                 );
           }
         }
@@ -490,6 +528,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private Callable<Boolean> pullImageFromOcrAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
+    });
+  }
+
+  private Callable<Boolean> pullImageFromOcirAndPushToKind(String image) {
+    return (() -> {
+      String kindRepoImage = KIND_REPO + image.substring(TestConstants.REPO_REGISTRY.length() + 1);
+      getLogger().info("kindRepoImage name is: " + kindRepoImage);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
     });
   }

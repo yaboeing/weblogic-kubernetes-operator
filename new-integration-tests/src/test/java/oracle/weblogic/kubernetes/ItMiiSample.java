@@ -33,6 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -260,10 +261,15 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
+    /*String dbImageName = (KIND_REPO != null
         ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
     String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);
+        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);*/
+
+    String dbImageName = (KIND_REPO != null
+        ? KIND_REPO + DB_IMAGE_NAME.substring(REPO_DEFAULT.length()) : DB_IMAGE_NAME);
+    String jrfBaseImageName = (KIND_REPO != null
+        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(REPO_DEFAULT.length()) : JRF_BASE_IMAGE_NAME);
 
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);
@@ -273,7 +279,8 @@ public class ItMiiSample {
     envMap.put("BASE_IMAGE_TAG", JRF_BASE_IMAGE_TAG);
     envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
     envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
+    //envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
+    envMap.put("DB_IMAGE_PULL_SECRET", REPO_SECRET_NAME); //ocr secret
     envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
 
     // run JRF use cases irrespective of WLS use cases fail/pass
