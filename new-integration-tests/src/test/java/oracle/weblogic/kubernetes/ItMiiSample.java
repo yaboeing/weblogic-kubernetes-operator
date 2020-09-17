@@ -323,7 +323,7 @@ public class ItMiiSample {
    * Test to verify JRF update3 use case.
    * @see #testWlsUpdate3UseCase for more...
    */
-  //@Test
+  @Test
   @Order(9)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
