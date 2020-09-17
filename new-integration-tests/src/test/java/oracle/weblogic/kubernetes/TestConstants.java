@@ -184,7 +184,7 @@ public interface TestConstants {
   public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
   public static final String DB_IMAGE_TAG = "12.2.0.1-slim";*/
   public static final String JRF_BASE_IMAGE_NAME = REPO_DEFAULT + "test-images/fmw-infrastructure";
-  public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
+  public static final String JRF_BASE_IMAGE_TAG = "12.2.1.3";
   public static final String DB_IMAGE_NAME = REPO_DEFAULT + "test-images/database/enterprise";
   public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
 
