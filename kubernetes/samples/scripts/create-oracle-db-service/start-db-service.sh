@@ -95,6 +95,9 @@ checkService oracle-db ${namespace}
 kubectl get po -n ${namespace}
 kubectl get service -n ${namespace}
 
+echo "##### DEBUGGING describe the db pod #####"
+kubectl -n ${namespace} describe pod ${dbpod}
+
 kubectl cp ${scriptDir}/common/checkDbState.sh -n ${namespace} ${dbpod}:/home/oracle/
 kubectl exec -it ${dbpod} -n ${namespace} /bin/bash /home/oracle/checkDbState.sh
 if [ $? != 0  ]; then
