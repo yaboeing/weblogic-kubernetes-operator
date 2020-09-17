@@ -182,7 +182,7 @@ public class ItMiiSample {
    * Verifies the sample application is running
    * (response includes "Hello World!").
    */
-  //@Test
+  @Test
   @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
@@ -202,7 +202,7 @@ public class ItMiiSample {
    * and detects the new datasource (response includes
    * "mynewdatasource").
    */
-  //@Test
+  @Test
   @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
@@ -220,7 +220,7 @@ public class ItMiiSample {
    * For each domain, verifies the sample application is running
    * (response includes "domain1" or "domain2" depending on domain).
    */
-  //@Test
+  @Test
   @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
@@ -239,7 +239,7 @@ public class ItMiiSample {
    * and is at the new version (response includes "v2").
    */
   @Test
-  //@Order(5)
+  @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testWlsUpdate3UseCase() {
@@ -299,7 +299,7 @@ public class ItMiiSample {
    * Test to verify JRF update1 use case.
    * @see #testWlsUpdate1UseCase for more...
    */
-  //@Test
+  @Test
   @Order(7)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
@@ -311,7 +311,7 @@ public class ItMiiSample {
    * Test to verify JRF update2 use case.
    * @see #testWlsUpdate2UseCase for more...
    */
-  //@Test
+  @Test
   @Order(8)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
