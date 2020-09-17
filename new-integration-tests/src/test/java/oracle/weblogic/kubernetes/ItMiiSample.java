@@ -342,13 +342,13 @@ public class ItMiiSample {
   @AfterAll
   public void tearDownAll() {
     // db cleanup or deletion
-    /*if (envMap != null) {
+    if (envMap != null) {
       logger.info("Running samples DB cleanup");
       Command.withParams(new CommandParams()
           .command(MII_SAMPLES_SCRIPT + " -precleandb")
           .env(envMap)
           .redirect(true)).execute();
-    }*/
+    }
 
     // uninstall traefik
     if (traefikNamespace != null) {
