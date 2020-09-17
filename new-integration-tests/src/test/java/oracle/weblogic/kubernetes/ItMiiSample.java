@@ -33,7 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
+//import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -267,9 +267,10 @@ public class ItMiiSample {
         ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);*/
 
     String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(REPO_DEFAULT.length()) : DB_IMAGE_NAME);
+        ? KIND_REPO + DB_IMAGE_NAME.substring(REPO_REGISTRY.length() + 1) : DB_IMAGE_NAME);
     String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(REPO_DEFAULT.length()) : JRF_BASE_IMAGE_NAME);
+        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(REPO_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);
+    logger.info("For ItMiiSample dbImageName is : {0}, jfrBaseImageName is: {1} ", dbImageName, jrfBaseImageName);
 
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);

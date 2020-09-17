@@ -53,7 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 //import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 //import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
+//import static oracle.weblogic.kubernetes.TestConstants.REPO_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
@@ -141,9 +141,9 @@ public class ItJrfDomainInPV {
       isUseSecret = false;
     }*/
     if (KIND_REPO != null) {
-      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(REPO_DEFAULT.length())
+      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(REPO_REGISTRY.length() + 1)
           + ":" + DB_IMAGE_TAG;
-      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(REPO_DEFAULT.length())
+      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(REPO_REGISTRY.length() + 1)
           + ":" + JRF_BASE_IMAGE_TAG;
       isUseSecret = false;
     }
