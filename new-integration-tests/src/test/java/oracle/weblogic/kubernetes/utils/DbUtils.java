@@ -190,7 +190,7 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
                             .image(dbBaseImageName)
-                            .imagePullPolicy("IfNotPresent")
+                            .imagePullPolicy("Always")
                             .name("oracledb")
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
@@ -308,7 +308,7 @@ public class DbUtils {
                 new V1Container()
                     .name("rcu")
                     .image(fmwBaseImageName)
-                    .imagePullPolicy("IfNotPresent")
+                    .imagePullPolicy("Always")
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
             /*.imagePullSecrets(isUseSecret ? Arrays.asList(
