@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -13,7 +12,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -38,7 +36,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
@@ -97,7 +94,6 @@ import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -458,105 +454,6 @@ public class ItIntrospectVersion {
         -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         "Accessing using old user/password succeeded, supposed to fail");
 
-    List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
-    }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
-
-  }
-
-  /**
-   * Test brings up a new cluster and verifies it can successfully start by doing the following.
-   * a. Creates new WebLogic static cluster using WLST.
-   * b. Patch the Domain Resource with cluster
-   * c. Update the introspectVersion version
-   * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
-   * pre-existing WebLogic cluster.
-   */
-  @Order(2)
-  @Test
-  @DisplayName("Test new cluster creation on demand using WLST and introspection")
-  public void testCreateNewCluster() {
-
-    final String domainUid = "mydomain";
-    final String clusterName = "cl2";
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "cl2-ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    final int replicaCount = 2;
-
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port = getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel");
-
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
-    p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
-    p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
-    p.setProperty("test_name", "create_cluster");
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("server_prefix", managedServerNameBase);
-    p.setProperty("server_count", "3");
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
-
-    // changet the admin server port to a different value to force pod restart
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
-
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, introDomainNamespace));
-
-    logger.info("patch the domain resource with new cluster and introspectVersion");
-    String patchStr
-        = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
-        + "},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-        + "]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-
-    // verify new cluster managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
-    }
-
-    // verify new cluster managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
-
-    List<String> managedServerNames = new ArrayList<String>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
-    }
-
-    //verify admin server accessibility and the health of cluster members
-    verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
-
   }
 
   /**
@@ -620,39 +517,6 @@ public class ItIntrospectVersion {
       createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
     }
-  }
-
-  private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
-      String user, String password) {
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Checking the health of servers in cluster");
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
-        + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
-
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Verifying the health of all cluster members"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-          assertEquals(200, response.statusCode(), "Status code not equals to 200");
-          boolean health = true;
-          for (String managedServer : managedServerNames) {
-            health = health && response.body().contains(managedServer + ":HEALTH_OK");
-            if (health) {
-              logger.info(managedServer + " is healthy");
-            } else {
-              logger.info(managedServer + " health is not OK or server not found");
-            }
-          }
-          return health;
-        });
   }
 
   /**
