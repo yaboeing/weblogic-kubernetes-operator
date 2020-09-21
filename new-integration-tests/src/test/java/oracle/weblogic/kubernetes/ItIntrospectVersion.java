@@ -373,9 +373,8 @@ public class ItIntrospectVersion {
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
-    // change the admin server port to a different value to force pod restart
-    logger.info("Creating a new WebLogic user/password {0}/{1} in default security realm",
-        ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH);
+    // change the admin user password
+    logger.info("Changing admin user password to {0} in default security realm", ADMIN_PASSWORD_PATCH);
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
