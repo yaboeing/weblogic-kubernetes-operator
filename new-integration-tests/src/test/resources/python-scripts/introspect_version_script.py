@@ -6,14 +6,18 @@ import sys, traceback
 def replace_admin_user():
   try:
     connect_to_adminserver()    
-    print "Creating user " + new_admin_user
+    print "Changing password for admin user " + admin_username
     atnr=cmo.getSecurityConfiguration().getDefaultRealm().lookupAuthenticationProvider("DefaultAuthenticator")
+    '''
     atnr.createUser(new_admin_user, new_admin_password, 'new administrator user')
     print "Created user successfully " + new_admin_user
     atnr.addMemberToGroup('Administrators', new_admin_user)
     print "Added user to Administrators group"
     atnr.removeUser(admin_username)
     print "Deleted user successfully " + admin_username
+    '''
+    atnr.changeUserPassword(admin_username, admin_password, new_admin_password)
+    print "Changed user password successfully to " + admin_username + ":" + new_admin_password
     disconnect()
   except NameError, e:
     print('Apparently properties not set.')

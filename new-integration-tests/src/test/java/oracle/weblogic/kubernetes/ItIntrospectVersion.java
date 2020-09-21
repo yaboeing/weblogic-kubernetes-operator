@@ -385,7 +385,7 @@ public class ItIntrospectVersion {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         newWlSecretName,
         introDomainNamespace,
-        ADMIN_USERNAME_PATCH,
+        ADMIN_USERNAME_DEFAULT,
         ADMIN_PASSWORD_PATCH),
         String.format("createSecret failed for %s", newWlSecretName));
 
@@ -450,7 +450,7 @@ public class ItIntrospectVersion {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(()
-        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
+        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_PATCH),
         "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
