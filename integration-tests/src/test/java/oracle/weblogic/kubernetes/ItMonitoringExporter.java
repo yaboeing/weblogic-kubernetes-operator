@@ -623,11 +623,12 @@ class ItMonitoringExporter {
 
 
     if (grafanaHelmParams == null) {
-      //logger.info("Node Port for Grafana is " + nodeportgrafana);
+
       grafanaHelmParams = installAndVerifyGrafana("grafana",
-              monitoringNS,
-              monitoringExporterEndToEndDir + "/grafana/values.yaml",
-              grafanaChartVersion);
+            monitoringNS,
+            monitoringExporterEndToEndDir + "/grafana/values.yaml",
+            grafanaChartVersion);
+
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       int nodeportgrafana = grafanaHelmParams.getNodePort();
       //wait until it starts dashboard
