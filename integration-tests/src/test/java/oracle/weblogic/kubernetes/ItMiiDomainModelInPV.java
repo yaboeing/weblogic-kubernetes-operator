@@ -230,8 +230,8 @@ public class ItMiiDomainModelInPV {
        /userguide/managing-domains/domain-resource/#domain-spec-elements
     1.Create the domain custom resource using mii with no domain and specifying a PV location for modelHome
     2.Create the domain custom resource using mii with custom wdt model home in a pv location
-    3. Verify the domain creation is successful and application is accessible.
-    4. Repeat the test the above test using image created with custom wdtModelHome.
+    3.Verify the domain creation is successful and application is accessible.
+    4.Repeat the test the above test using image created with custom wdtModelHome.
    * @param params domain name and image parameters
    */
   @ParameterizedTest
