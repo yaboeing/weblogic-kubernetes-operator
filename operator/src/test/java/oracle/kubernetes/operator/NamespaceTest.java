@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -95,6 +98,39 @@ public class NamespaceTest {
     testSupport.runSteps(Main.createDomainRecheckSteps(DateTime.now()));
 
     assertThat(JobWatcher.getOrCreateFor(domain), not(sameInstance(oldWatcher)));
+  }
+
+  @Test
+  public void whenDomainNamespaceDeleted_stopDomain() {
+    defineNamespaces("NS1", "NS2");
+    specifyDomainNamespaces("NS1", "NS3");
+    processNamespaces();
+    dp.clearStoppedNamespaces();
+
+    deleteNamespace("NS1");
+    processNamespaces();
+
+    assertThat(dp.wasNamespaceStopped("NS1"), is(true));
+  }
+
+  private void defineNamespaces(String... namespaces) {
+    Arrays.stream(namespaces).forEach(n -> testSupport.defineResources(createNamespace(n)));
+  }
+
+  private V1Namespace createNamespace(String n) {
+    return new V1Namespace().metadata(new V1ObjectMeta().name(n));
+  }
+
+  private void specifyDomainNamespaces(String... namespaces) {
+    Arrays.stream(namespaces).forEach(this::addDomainNamespace);
+  }
+
+  private void deleteNamespace(String namespaceName) {
+    testSupport.deleteNamespace(namespaceName);
+  }
+
+  private void processNamespaces() {
+    testSupport.runSteps(new Main.Namespaces(false).readExistingNamespaces());
   }
 
   @Test
@@ -215,6 +251,14 @@ public class NamespaceTest {
     @Override
     public void stopNamespace(String ns) {
       Optional.ofNullable(ns).ifPresent(nspace -> nameSpaces.add(nspace));
+    }
+
+    public boolean wasNamespaceStopped(String ns) {
+      return nameSpaces.contains(ns);
+    }
+
+    public void clearStoppedNamespaces() {
+      nameSpaces.clear();
     }
   }
 }

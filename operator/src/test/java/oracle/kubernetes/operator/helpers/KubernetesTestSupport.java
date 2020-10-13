@@ -297,6 +297,14 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.get(PODLOG).createResourceInNamespace(name, namespace, contents);
   }
 
+  /**
+   * Deletes the specified namespace.
+   * @param namespaceName the name of the namespace to delete
+   */
+  public void deleteNamespace(String namespaceName) {
+    repositories.get(NAMESPACE).data.remove(namespaceName);
+  }
+
   @SuppressWarnings("unchecked")
   private <T> DataRepository<T> getDataRepository(T resource) {
     return (DataRepository<T>) repositories.get(dataTypes.get(resource.getClass()));
