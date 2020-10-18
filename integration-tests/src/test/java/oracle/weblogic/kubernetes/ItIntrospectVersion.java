@@ -45,6 +45,7 @@ import org.awaitility.core.EvaluatedCondition;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -198,6 +199,7 @@ public class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
+  @Disabled
   @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
@@ -493,7 +495,7 @@ public class ItIntrospectVersion {
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
-  @Order(2)
+  @Order(1)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   public void testDomainIntrospectVersionRolling() {
@@ -612,6 +614,7 @@ public class ItIntrospectVersion {
    * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
    * e. Verifies the the admin server console access with old credentials fail.
    */
+  @Disabled
   @Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
@@ -759,6 +762,7 @@ public class ItIntrospectVersion {
    * d. Verifies the servers in the new WebLogic cluster comes up without affecting any of the running servers on
    * pre-existing WebLogic cluster.
    */
+  @Disabled
   @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
@@ -849,6 +853,7 @@ public class ItIntrospectVersion {
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
+  @Disabled
   @Order(5)
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")

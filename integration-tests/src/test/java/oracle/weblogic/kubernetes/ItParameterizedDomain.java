@@ -60,6 +60,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -256,6 +257,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
@@ -272,6 +274,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
@@ -288,6 +291,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
@@ -304,6 +308,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
   @MethodSource("domainProvider")
@@ -330,6 +335,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("Test admin console login using ingress controller")
   @MethodSource("domainProvider")
@@ -353,6 +359,7 @@ class ItParameterizedDomain {
   /**
    * Verify liveness probe by killing managed server process 3 times to kick pod container auto-restart.
    */
+  @Disabled
   @Test
   @DisplayName("Test liveness probe of pod")
   public void testLivenessProbe() {
@@ -449,6 +456,7 @@ class ItParameterizedDomain {
    * File store and JMS server are targeted to the WebLogic cluster cluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
+  @Disabled
   @Test
   @DisplayName("Test dataHome override in a domain with domain in image type")
   public void testDataHomeOverrideDomainInImage() {
@@ -507,6 +515,7 @@ class ItParameterizedDomain {
    * File store and JMS server are targeted to the WebLogic admin server
    * see resource/wdt-models/model-multiclusterdomain-sampleapp-wls.yaml
    */
+  @Disabled
   @Test
   @DisplayName("Test dataHome override in a domain with model in image type")
   public void testDataHomeOverrideMiiDomain() {
