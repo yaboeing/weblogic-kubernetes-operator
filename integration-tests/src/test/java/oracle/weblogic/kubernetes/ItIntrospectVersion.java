@@ -199,8 +199,7 @@ public class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
-  @Disabled
-  @Order(1)
+  //@Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDomainIntrospectVersionNotRolling() {
@@ -495,6 +494,7 @@ public class ItIntrospectVersion {
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
+  @Disabled 
   @Order(1)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
