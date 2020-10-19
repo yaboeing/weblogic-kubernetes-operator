@@ -229,8 +229,8 @@ class ItParameterizedDomain {
     // create domain in pv
     domainOnPV = createDomainOnPvUsingWdt(domainOnPVNamespace);
 
-    domains.add(miiDomain);
-    domains.add(domainInImage);
+    //domains.add(miiDomain);
+    //domains.add(domainInImage);
     domains.add(domainOnPV);
 
     // create ingress for each domain
@@ -274,7 +274,6 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
@@ -577,6 +576,7 @@ class ItParameterizedDomain {
    * File store and JMS server are targeted to the WebLogic admin server
    * see resource/wdt-models/domain-onpv-wdt-model.yaml
    */
+  @Disabled
   @Test
   @DisplayName("Test dataHome override in a domain with domain on PV type")
   public void testDataHomeOverrideDomainOnPV() {
