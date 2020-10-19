@@ -199,7 +199,8 @@ public class ItIntrospectVersion {
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
-  //@Order(1)
+  @Disabled
+  @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDomainIntrospectVersionNotRolling() {
@@ -614,8 +615,8 @@ public class ItIntrospectVersion {
    * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
    * e. Verifies the the admin server console access with old credentials fail.
    */
-  @Disabled
-  @Order(3)
+  //@Disabled
+  //@Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
   public void testCredentialChange() {

@@ -274,6 +274,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
@@ -290,7 +291,6 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
