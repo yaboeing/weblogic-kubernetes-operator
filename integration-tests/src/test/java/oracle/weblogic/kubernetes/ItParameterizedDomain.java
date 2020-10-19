@@ -274,7 +274,6 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
@@ -291,6 +290,7 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @Disabled
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
@@ -1074,6 +1074,27 @@ class ItParameterizedDomain {
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
     }
+
+    // Check deploy succeeds
+    //String curlCommand =
+    // "curl -v --show-error --noproxy '*' -H 'host: domainonpv-sxir.ns-sxir.cluster-1.test'
+    // http://172.18.0.3:30393/sample-war/index.jsp"
+
+    String curlCmd =
+        String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
+          domainUid + "." + domainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+
+    List<String> managedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
+    }
+
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+        .as("Verify NGINX can access the monitoring exporter metrics "
+          + "from all managed servers in the domain via http")
+        .withFailMessage("NGINX can not access the monitoring exporter metrics "
+          + "from one or more of the managed servers via http")
+        .isTrue();
 
     return domain;
   }
