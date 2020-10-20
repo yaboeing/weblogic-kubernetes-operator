@@ -699,7 +699,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
         readinessProbe =
-            readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort, false));
+            readinessProbe.httpGet(httpGetAction(READINESS_PATH, getLocalAdminProtocolChannelPort(),
+                isLocalAdminProtocolChannelSecure()));
       } else {
         readinessProbe =
             readinessProbe.httpGet(

@@ -822,8 +822,8 @@ class TopologyGenerator(Generator):
       self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
       self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
-    if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
-      self.addIstioNetworkAccessPoint("https-admin", "https", getAdministrationPort(server, self.env.getDomain()), 0)
+    # if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
+    #   self.addIstioNetworkAccessPoint("https-admin", "https", getAdministrationPort(server, self.env.getDomain()), 0)
     return True
 
   def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
@@ -1234,9 +1234,9 @@ class SitConfigGenerator(Generator):
       self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='iiops')
 
-    if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
-      self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
-                          listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
+    # if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
+    #   self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
+    #                       listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
 
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
