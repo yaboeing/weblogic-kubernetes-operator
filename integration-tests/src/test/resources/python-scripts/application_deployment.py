@@ -66,7 +66,6 @@ def deploy_application():
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)
  
-if __name__== "main": 
-  decode_archive()
-  deploy_application()
-  exit()
+decode_archive()
+deploy_application()
+exit()
