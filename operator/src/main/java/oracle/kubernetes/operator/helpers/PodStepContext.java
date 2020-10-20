@@ -694,13 +694,23 @@ public abstract class PodStepContext extends BasePodStepContext {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD);
+
+    LOGGER.info("DEBUG: createReadinessProbe for pod " + this.getPodName());
+    String asName = this.getAsName();
     try {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
-        readinessProbe =
-            readinessProbe.httpGet(httpGetAction(READINESS_PATH, getLocalAdminProtocolChannelPort(),
-                isLocalAdminProtocolChannelSecure()));
+        if (this.getPodName().equals(getDomainUid() + "-" + this.getAsName())) {
+          // this is the admin pod ??? Is it safe??
+          readinessProbe =
+              readinessProbe.httpGet(httpGetAction(READINESS_PATH, getLocalAdminProtocolChannelPort(),
+                  isLocalAdminProtocolChannelSecure()));
+        } else {
+          readinessProbe =
+              readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
+                  false));
+        }
       } else {
         readinessProbe =
             readinessProbe.httpGet(
