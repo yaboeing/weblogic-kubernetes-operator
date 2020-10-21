@@ -173,6 +173,12 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
+  boolean isAdminPortEnabled() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isAdminPortEnabled();
+  }
+
   private String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
@@ -694,18 +700,19 @@ public abstract class PodStepContext extends BasePodStepContext {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD);
-
-    LOGGER.info("DEBUG: createReadinessProbe for pod " + this.getPodName());
-    String asName = this.getAsName();
     try {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
-        if (this.getPodName().equals(getDomainUid() + "-" + this.getAsName())) {
-          // this is the admin pod ??? Is it safe??
+        // if domain wide admin port enabled, it must use the domain wide admin port
+        // and annotations in server pod
+        if (isAdminPortEnabled()) {
           readinessProbe =
-              readinessProbe.httpGet(httpGetAction(READINESS_PATH, getLocalAdminProtocolChannelPort(),
-                  isLocalAdminProtocolChannelSecure()));
+              readinessProbe.httpGet(
+                  httpGetAction(
+                      READINESS_PATH,
+                      getLocalAdminProtocolChannelPort(),
+                      isLocalAdminProtocolChannelSecure()));
         } else {
           readinessProbe =
               readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
