@@ -141,7 +141,27 @@ public class Kubernetes {
       // to keep a long running connection with the server to fix SSL connection closed issue
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
-      apiClient.setAccessToken("eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrdWJlY29uZmlnLXNhLXRva2VuLXd0Y2dkIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6Imt1YmVjb25maWctc2EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIxZGQ0YTBkZi1jNjNkLTRjZGUtOWExZC0yY2FkNWU3ODAxZTYiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06a3ViZWNvbmZpZy1zYSJ9.ifDvOjs1dbn0BpKgiapjVQ0r-lmPgefAnAt4ozX7ZIJ3H3sYFjytWXg61RsvYN_qVcgY1zplBQbHkAcIRXZdd0Rjz4fAM_YalfQDNoX43I3Lb7n0GfJ9DftvNJYYfDEwDm8eyGYJQv3idf-JFbDYLwa7ZqCFJMqfE7D00FvTPAS70JtpDoyWHHJhiGpuGTNMktC3UUT60CVuvGDf7bzur_Xz0PNx6mzHX7CUEvyt9aDnrS0Pwvyij5Fj1dcFp1wp-SvnW1CVcUhquxNDGXwY2BBAUH_OmeMF5njW4hKANDZGUJxud6yh4BeEkPHI2Rvr0Vgk3ucitjastQwuafzE_A");
+      apiClient.setAccessToken("eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9."
+          + "eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZ"
+          + "XRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc"
+          +
+          "2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrdWJlY29uZmlnLXNhLXRva2VuLXd0Y2dkIiwia3ViZX"
+          +
+          "JuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6Imt1YmVjb25maWctc2"
+          +
+          "EiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIxZGQ"
+          +
+          "0YTBkZi1jNjNkLTRjZGUtOWExZC0yY2FkNWU3ODAxZTYiLCJzdWIiOiJzeXN0ZW06c2VydmljZWF"
+          +
+          "jY291bnQ6a3ViZS1zeXN0ZW06a3ViZWNvbmZpZy1zYSJ9.ifDvOjs1dbn0BpKgiapjVQ0r"
+          +
+          "-lmPgefAnAt4ozX7ZIJ3H3sYFjytWXg61RsvYN_qVcgY1zplBQbHkAcIRXZdd0Rjz4fAM_"
+          +
+          "YalfQDNoX43I3Lb7n0GfJ9DftvNJYYfDEwDm8eyGYJQv3idf-JFbDYLwa7ZqCFJMqfE7D00FvTPAS70"
+          +
+          "JtpDoyWHHJhiGpuGTNMktC3UUT60CVuvGDf7bzur_Xz0PNx6mzHX7CUEvyt9aDnrS0Pwvyij5Fj1dcFp1wp"
+          +
+          "-SvnW1CVcUhquxNDGXwY2BBAUH_OmeMF5njW4hKANDZGUJxud6yh4BeEkPHI2Rvr0Vgk3ucitjastQwuafzE_A");
       apiClient.setUsername("kubeconfig-sa");
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
