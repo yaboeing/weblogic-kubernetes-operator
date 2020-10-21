@@ -141,6 +141,8 @@ public class Kubernetes {
       // to keep a long running connection with the server to fix SSL connection closed issue
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
+      apiClient.setDebugging(true);
+      
       apiClient.setAccessToken("eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9."
           + "eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZ"
           + "XRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc"
@@ -166,6 +168,8 @@ public class Kubernetes {
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
+
+
       initializeGenericKubernetesApiClients();
       // create standard, reusable retry/backoff policy
       withStandardRetryPolicy = with().pollDelay(2, SECONDS)
