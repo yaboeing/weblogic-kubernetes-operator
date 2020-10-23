@@ -352,8 +352,8 @@ public class ItSamples {
   // create persistent volume and persistent volume claims used by the samples
   private void createPvPvc(String domainName) {
 
-    String pvName = domainName + "-weblogic-sample-pv";
-    String pvcName = domainName + "-weblogic-sample-pvc";
+    String pvName = domainName + "-" + domainName + "-weblogic-sample-pv";
+    String pvcName = domainName + "-" + domainName + "-weblogic-sample-pvc";
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
