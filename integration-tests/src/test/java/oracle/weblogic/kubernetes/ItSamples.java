@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,6 +20,8 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -34,10 +37,12 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
@@ -58,11 +63,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItSamples {
 
+  public static final String SERVER_LIFECYCLE = "Server";
+  public static final String CLUSTER_LIFECYCLE = "Cluster";
+  public static final String DOMAIN = "DOMAIN";
+  public static final String STOP_SERVER_SCRIPT = "stopServer.sh";
+  public static final String START_SERVER_SCRIPT = "startServer.sh";
+  public static final String STOP_CLUSTER_SCRIPT = "stopCluster.sh";
+  public static final String START_CLUSTER_SCRIPT = "startCluster.sh";
+  public static final String STOP_DOMAIN_SCRIPT = "stopDomain.sh";
+  public static final String START_DOMAIN_SCRIPT = "startDomain.sh";
+
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static final String domainName = "domain1";
+  private final int replicaCount = 2;
+  private final String clusterName = "cluster-1";
+  private final String managedServerNameBase = "managed-server";
+  private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
@@ -106,13 +127,14 @@ public class ItSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in pv")
+  @Order(1)
   public void testSampleDomainInPv(String model) {
 
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
 
     //copy the samples directory to a temporary location
-    setupSample();
+    setupSample(domainName);
     //create PV and PVC used by the domain
     createPvPvc(domainName);
 
@@ -185,24 +207,131 @@ public class ItSamples {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
 
-    //delete the domain resource
-    params = new CommandParams().defaults();
-    params.command("kubectl delete -f "
-        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to delete domain custom resource");
-
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
-
   }
+
+  /**
+   * Test scripts for stopping and starting a managed server.
+   */
+  @Test
+  @DisplayName("Test server lifecycle samples scripts")
+  @Order(2)
+  public void testServerLifecycleScripts() {
+
+    // Verify that stopServer script execution shuts down server pod and replica count is decremented
+    String serverName = managedServerNameBase + "1";
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    assertDoesNotThrow(() -> {
+      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 1);
+    });
+
+    // Verify that startServer script execution starts server pod and replica count is incremented
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    checkPodExists(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    assertDoesNotThrow(() -> {
+      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+    });
+  }
+
+  /**
+   * Test scripts for stopping and starting a managed server while keeping replica count constant.
+   */
+  @Test
+  @DisplayName("Test server lifecycle samples scripts with constant replica count")
+  @Order(3)
+  public void testServerLifecycleScriptsWithConstantReplicaCount() {
+    String serverName = managedServerNameBase + "1";
+    String keepReplicaCountConstantParameter = "-k";
+    // Verify that replica count is not changed when using "-k" parameter and a replacement server is started
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "3", domainName, domainNamespace);
+    assertDoesNotThrow(() -> {
+      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+    });
+
+    // Verify that replica count is not changed when using "-k" parameter and replacement server is shutdown
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
+    checkPodExists(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "3", domainName, domainNamespace);
+    assertDoesNotThrow(() -> {
+      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+    });
+  }
+
+  /**
+   * Test scripts for stopping and starting a cluster.
+   */
+  @Test
+  @DisplayName("Test cluster lifecycle scripts")
+  @Order(4)
+  public void testClusterLifecycleScripts() {
+
+    // Verify all clustered server pods are shut down after stopCluster script execution
+    executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
+
+    // Verify all clustered server pods are started after startCluster script execution
+    executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
+  }
+
+  /**
+   * Test scripts for stopping and starting a domain.
+   */
+  @Test
+  @DisplayName("Test domain lifecycle scripts")
+  @Order(5)
+  public void testDomainLifecycleScripts() {
+    // Verify all WebLogic server instance pods are shut down after stopDomain script execution
+    executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
+    String adminServerName = "admin-server";
+    String adminServerPodName = domainName + "-" + adminServerName;
+    checkPodDoesNotExist(adminServerPodName, domainName, domainNamespace);
+
+    // Verify all WebLogic server instance pods are started after startDomain script execution
+    executeLifecycleScript(START_DOMAIN_SCRIPT, DOMAIN, null);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
+    checkPodExists(adminServerPodName, domainName, domainNamespace);
+  }
+
+  // Function to execute domain lifecyle scripts
+  private void executeLifecycleScript(String script, String scriptType, String entityName) {
+    executeLifecycleScript(script, scriptType, entityName, "");
+  }
+
+  // Function to execute domain lifecyle scripts
+  private void executeLifecycleScript(String script, String scriptType, String entityName, String extraParams) {
+    CommandParams params;
+    boolean result;
+    String commonParameters = " -d " + domainName + " -n " + domainNamespace;
+    params = new CommandParams().defaults();
+    if (scriptType.equals(SERVER_LIFECYCLE)) {
+      params.command("sh "
+              + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+              + commonParameters + " -s " + entityName + " " + extraParams);
+    } else if (scriptType.equals(CLUSTER_LIFECYCLE)) {
+      params.command("sh "
+              + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+              + commonParameters + " -c " + entityName);
+    } else {
+      params.command("sh "
+              + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+              + commonParameters);
+    }
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to execute script " + script);
+  }
+
 
   // generates the stream of objects used by parametrized test.
   private static Stream<String> paramProvider() {
@@ -210,7 +339,7 @@ public class ItSamples {
   }
 
   // copy samples directory to a temporary location
-  private void setupSample() {
+  private void setupSample(String domainName) {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
@@ -235,7 +364,7 @@ public class ItSamples {
     // create pv and pvc
     assertDoesNotThrow(() -> {
       // when tests are running in local box the PV directories need to exist
-      Path pvHostPath = null;
+      Path pvHostPath;
       pvHostPath = Files.createDirectories(Paths.get(PV_ROOT, this.getClass().getSimpleName(), pvName));
 
       logger.info("Creating PV directory host path {0}", pvHostPath);
@@ -309,7 +438,7 @@ public class ItSamples {
    * Delete the persistent volumes since the pv is not decorated with label.
    */
   @AfterAll
-  public void tearDownAll() {
+  public void tearDownAll() throws IOException {
     for (String domainName : new String[]{"domain1", "domain2"}) {
       deletePersistentVolume(domainName + "-weblogic-sample-pv");
     }
