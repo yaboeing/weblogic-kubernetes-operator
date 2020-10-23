@@ -16,7 +16,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
@@ -434,30 +433,5 @@ public class ItSamples {
             String.format("pvcExists failed with ApiException for pvc %s",
                 pvcName)));
 
-  }
-
-  /*
-  *Delete the domain and persistent volumes since the pv is not decorated with label.
-   */
-  @AfterAll
-  public void tearDownAll() {
-  /*
-    List<Domain> domains = TestActions.listDomainCustomResources(domainNamespace).items();
-    for (Domain domain : domains) {
-      TestActions.deleteDomainCustomResource(domain.getMetadata().getName(), domainNamespace);
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                  domain.getMetadata().getName(),
-                  domainNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> domainDoesNotExist(domain.getMetadata().getName(), null, domainNamespace),
-              String.format("Domain custom resource %s deleted failed with ApiException",
-                  domain.getMetadata().getName())));
-      deletePersistentVolumeClaim(domainName + "-weblogic-sample-pvc", domainNamespace);
-      deletePersistentVolume(domainName + "-weblogic-sample-pv");
-  */
   }
 }
