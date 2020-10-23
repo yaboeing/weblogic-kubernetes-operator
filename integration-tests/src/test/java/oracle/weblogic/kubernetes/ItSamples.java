@@ -131,7 +131,7 @@ public class ItSamples {
     String script = model.split(":")[0];
 
     //copy the samples directory to a temporary location
-    setupSample(domainName);
+    setupSample();
     //create PV and PVC used by the domain
     createPvPvc(domainName);
 
@@ -336,7 +336,7 @@ public class ItSamples {
   }
 
   // copy samples directory to a temporary location
-  private void setupSample(String domainName) {
+  private void setupSample() {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
@@ -374,11 +374,6 @@ public class ItSamples {
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
-      // set the baseName to domain name in create-pv-pvc-inputs.yaml
-      /*
-      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
-      */
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
