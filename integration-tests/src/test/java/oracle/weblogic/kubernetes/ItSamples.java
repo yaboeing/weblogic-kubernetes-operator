@@ -203,7 +203,6 @@ public class ItSamples {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
-
   }
 
   /**
