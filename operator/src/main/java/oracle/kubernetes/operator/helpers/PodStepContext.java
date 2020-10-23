@@ -705,16 +705,16 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
         int localAdminPort = getLocalAdminProtocolChannelPort();
-        Integer sslPort = getSSLPort();
-        // if admin port enabled, it must use the admin port for readiness probe otherwise the ready app reject the
-        // request.  We need to set the readiness probe to the admin port
-        // and annotations of the server pod in the domain resource CR
+        // if admin port enabled (whether it is domain wide or per server, it must use the admin port
+        // for readiness probe instead of the istio readiness port otherwise the ready app reject the
+        // request.
+        // The annotations of the server pod in the domain resource must set the followings
         //
         //     annotations:
         //      traffic.sidecar.istio.io/excludeInboundPorts: "<comma separated list of admin port>"
         //      sidecar.istio.io/rewriteAppHTTPProbers: "false"
         //
-        if (sslPort != null && localAdminPort != sslPort) {
+        if (isAdminPortEnabled() || (getSSLPort() != null && localAdminPort != getSSLPort())) {
           readinessProbe =
               readinessProbe.httpGet(
                   httpGetAction(
