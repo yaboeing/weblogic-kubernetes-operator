@@ -479,14 +479,21 @@ public class CleanupUtil {
 
     for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
       String label = null;
+      String key = null;
       if (pvc.getMetadata().getLabels() != null) {
-        label = pvc.getMetadata().getLabels().get("weblogic.domainUid");
+        if (pvc.getMetadata().getLabels().get("weblogic.domainUid") != null) {
+          label = pvc.getMetadata().getLabels().get("weblogic.domainUid");
+          key = "weblogic.domainUid";
+        } else {
+          label = pvc.getMetadata().getLabels().get("weblogic.domainUID");
+          key = "weblogic.domainUID";
+        }
       }
       // get a list of pvs used by the pvcs in this namespace
       try {
         if (null != label) {
           List<V1PersistentVolume> items = Kubernetes.listPersistentVolumes(
-              String.format("weblogic.domainUid = %s", label)).getItems();
+              String.format(key + " = %s", label)).getItems();
           pvs.addAll(items);
         }
         // delete the pvc
