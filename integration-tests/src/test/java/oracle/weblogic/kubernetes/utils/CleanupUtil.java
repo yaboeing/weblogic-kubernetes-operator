@@ -484,7 +484,7 @@ public class CleanupUtil {
         if (pvc.getMetadata().getLabels().get("weblogic.domainUid") != null) {
           label = pvc.getMetadata().getLabels().get("weblogic.domainUid");
           key = "weblogic.domainUid";
-        } else {
+        } else if (pvc.getMetadata().getLabels().get("weblogic.domainUID") != null) {
           label = pvc.getMetadata().getLabels().get("weblogic.domainUID");
           key = "weblogic.domainUID";
         }
