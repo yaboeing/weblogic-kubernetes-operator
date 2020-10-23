@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -37,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -435,11 +437,24 @@ public class ItSamples {
   }
 
   /**
-   * Delete the persistent volumes since the pv is not decorated with label.
+   * Delete the domain and persistent volumes since the pv is not decorated with label.
    */
   @AfterAll
-  public void tearDownAll() throws IOException {
-    for (String domainName : new String[]{"domain1", "domain2"}) {
+  public void tearDownAll() {
+    List<Domain> domains = TestActions.listDomainCustomResources(domainNamespace).items();
+    for (Domain domain : domains) {
+      TestActions.deleteDomainCustomResource(domain.getMetadata().getName(), domainNamespace);
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
+                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                  domain.getMetadata().getName(),
+                  domainNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> domainDoesNotExist(domain.getMetadata().getName(), null, domainNamespace),
+              String.format("Domain custom resource %s deleted failed with ApiException",
+                  domain.getMetadata().getName())));
       deletePersistentVolume(domainName + "-weblogic-sample-pv");
     }
   }
