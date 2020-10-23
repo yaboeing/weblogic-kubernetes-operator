@@ -352,8 +352,8 @@ public class ItSamples {
   // create persistent volume and persistent volume claims used by the samples
   private void createPvPvc(String domainName) {
 
-    String pvName = domainName + "-" + domainName + "-weblogic-sample-pv";
-    String pvcName = domainName + "-" + domainName + "-weblogic-sample-pvc";
+    String pvName = domainName + "-weblogic-sample-pv";
+    String pvcName = domainName + "-weblogic-sample-pvc";
 
     Path pvpvcBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-weblogic-domain-pv-pvc");
@@ -375,8 +375,10 @@ public class ItSamples {
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
       // set the baseName to domain name in create-pv-pvc-inputs.yaml
+      /*
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "baseName: weblogic-sample", "baseName: " + domainName + "-weblogic-sample");
+      */
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
           "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
@@ -398,7 +400,7 @@ public class ItSamples {
     //create pv and pvc
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + domainName + "-" + domainName + "-weblogic-sample-pv.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
@@ -415,7 +417,7 @@ public class ItSamples {
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + domainName + "-" + domainName + "-weblogic-sample-pvc.yaml").toString());
+        "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
