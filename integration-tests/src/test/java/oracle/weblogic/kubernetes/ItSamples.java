@@ -398,7 +398,7 @@ public class ItSamples {
     //create pv and pvc
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
+        "pv-pvcs/" + domainName + "-" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
@@ -415,7 +415,7 @@ public class ItSamples {
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
-        "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
+        "pv-pvcs/" + domainName + "-" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
