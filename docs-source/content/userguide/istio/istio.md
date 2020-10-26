@@ -91,6 +91,28 @@ To enable Istio support, you must include the `istio` section
 and set `enabled: true` as shown.  The `readinessPort` is optional
 and defaults to `8888` if not provided; it is used for a readiness health check.
 
+##### Istio with administration port 
+
+If the WebLogic Domain has administration port enabled whether it is domain wide, per server or using the administration protocol in a network access point,
+those ports need to be excluded from the istio mesh and disable readiness probe rewrite policy.
+
+```
+apiVersion: "weblogic.oracle/v8"
+kind: Domain
+metadata:
+  name: domain2
+  namespace: domain1
+  labels:
+    weblogic.domainUID: domain2
+spec:
+  ... other content ...
+  serverPod:
+    annotations:
+      traffic.sidecar.istio.io/excludeInboundPorts: "<comma separated list of administration ports"
+      sidecar.istio.io/rewriteAppHTTPProbers: "false"
+
+```
+
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on Pods.  When you enable Istio support in the Domain YAML file, the
