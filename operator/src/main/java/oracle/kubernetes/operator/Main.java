@@ -317,6 +317,7 @@ public class Main {
   }
 
   private void completeBegin() {
+    LOGGER.info("REG-> starting 'completeBegin'");
     try {
       // start the REST server
       startRestServer(delegate.getPrincipal());
@@ -405,6 +406,7 @@ public class Main {
   private void startRestServer(String principal)
       throws Exception {
     RestServer.create(new RestConfigImpl(principal, delegate.getDomainNamespaces()::getNamespaces));
+    System.out.println("REG-> about to invoke start");
     RestServer.getInstance().start(container);
   }
 

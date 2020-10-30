@@ -203,8 +203,8 @@ public class RestServer {
                 + getExternalHttpsUri()
                 + "/operator"); // TBD .fine ?
       } else {
-        LOGGER.fine(
-            "Did not start the external ssl REST server because external ssl has not been configured.");
+        LOGGER.info(
+            "REG-> Did not start the external ssl REST server because external ssl has not been configured.");
       }
 
       if (isInternalSslConfigured()) {
@@ -214,8 +214,8 @@ public class RestServer {
                 + getInternalHttpsUri()
                 + "/operator"); // TBD .fine ?
       } else {
-        LOGGER.fine(
-            "Did not start the internal ssl REST server because internal ssl has not been configured.");
+        LOGGER.info(
+            "REG-> Did not start the internal ssl REST server because internal ssl has not been configured.");
       }
 
       fullyStarted = true;
