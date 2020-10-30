@@ -713,6 +713,8 @@ public class Kubernetes {
           null // name associated with the actor or entity that is making these changes
       );
     } catch (ApiException apex) {
+      System.out.println("REG-> failed to create namespace");
+      apex.printStackTrace();
       getLogger().severe(apex.getResponseBody());
       throw apex;
     }
