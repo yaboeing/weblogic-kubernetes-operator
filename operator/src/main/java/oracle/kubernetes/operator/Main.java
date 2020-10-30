@@ -321,6 +321,7 @@ public class Main {
       // start the REST server
       startRestServer(delegate.getPrincipal());
 
+      LOGGER.info("REG-> rest server started");
       // start periodic retry and recheck
       int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
       delegate.getEngine()
@@ -328,6 +329,7 @@ public class Main {
           .scheduleWithFixedDelay(
               recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
 
+      LOGGER.info("REG-> scheduled updating");
       markReadyAndStartLivenessThread();
 
     } catch (Throwable e) {
@@ -358,6 +360,7 @@ public class Main {
     }
 
     final DomainRecheck domainRecheck = new DomainRecheck(delegate, isFullRecheck);
+    LOGGER.info("REG-> instantiated domain ");
     return Step.chain(
         domainRecheck.createOperatorNamespaceReview(),
         CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),

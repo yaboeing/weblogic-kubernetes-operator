@@ -206,6 +206,7 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
+      System.out.println("REG-> starting namespace check for " + ns);
       NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
       if (fullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
         return doNext(packet);
