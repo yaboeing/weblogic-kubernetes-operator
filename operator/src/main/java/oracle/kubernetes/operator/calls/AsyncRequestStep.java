@@ -242,6 +242,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   @Override
   public NextAction apply(Packet packet) {
+    LOGGER.info("REG-> in AsyncRequestStep.apply");
     // we don't have the domain presence information and logging context information yet,
     // add a logging context to pass the namespace information to the LoggingFormatter
     if (requestParams.namespace != null 
@@ -255,6 +256,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     // clear out earlier results
+    LOGGER.info("REG-> clearing out earlier results");
     String cont = (String) packet.remove(CONTINUE);
     RetryStrategy retry = null;
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
@@ -275,6 +277,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     if (LOGGER.isFinerEnabled()) {
       logAsyncRequest();
     }
+
+    LOGGER.info("REG-> about to suspend processing");
 
     AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
     return doSuspend(

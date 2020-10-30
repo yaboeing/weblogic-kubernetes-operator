@@ -310,7 +310,15 @@ public class Main {
   private class StartNamespaceWatcherStep extends DefaultResponseStep<V1NamespaceList> {
 
     @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      LOGGER.info("REG-> in StartNamespaceWatcherStep.onFailure with " + callResponse.getExceptionString());
+
+      return super.onFailure(packet, callResponse);
+    }
+
+    @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
+      LOGGER.info("REG-> in StartNamespaceWatcherStep.onSuccess with " + callResponse.getResult());
       namespaceWatcher = createNamespaceWatcher(KubernetesUtils.getResourceVersion(callResponse.getResult()));
       return doNext(packet);
     }
