@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.work;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -449,8 +451,12 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
 
       NextAction result;
       try {
+        LOGGER.info("REG-> starting " + na.next);
         result = na.next.apply(na.packet);
       } catch (Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        LOGGER.severe("REG-> aborted with " + sw.toString());
         Packet p = na.packet;
         na = new NextAction();
         na.terminate(t, p);
