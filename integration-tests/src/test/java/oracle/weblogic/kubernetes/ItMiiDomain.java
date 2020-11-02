@@ -83,6 +83,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodKubectl;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
@@ -334,7 +335,7 @@ class ItMiiDomain {
     accountingThread =
         new Thread(
             () -> {
-              collectAppAvaiability(
+              collectAppAvailability(
                   domainNamespace,
                   appAvailability,
                   managedServerPrefix,
@@ -1060,7 +1061,7 @@ class ItMiiDomain {
                namespace)));
   }
   
-  private static void collectAppAvaiability(
+  private static void collectAppAvailability(
       String namespace,
       List<Integer> appAvailability,
       String managedServerPrefix,
@@ -1075,7 +1076,7 @@ class ItMiiDomain {
     while (!v2AppAvailable)  {
       v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
-        v2AppAvailable = v2AppAvailable && appAccessibleInPod(
+        v2AppAvailable = v2AppAvailable && appAccessibleInPodKubectl(
                             namespace,
                             managedServerPrefix + i, 
                             internalPort, 
@@ -1085,7 +1086,7 @@ class ItMiiDomain {
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
-        if (appAccessibleInPod(
+        if (appAccessibleInPodKubectl(
             namespace,
             managedServerPrefix + i, 
             internalPort, 
