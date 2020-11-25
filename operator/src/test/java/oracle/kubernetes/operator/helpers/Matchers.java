@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
@@ -28,8 +30,13 @@ import static org.hamcrest.Matchers.hasItem;
 public class Matchers {
 
   public static Matcher<Iterable<? super V1Container>> hasContainer(
-      String name, String image, String... command) {
-    return hasItem(createContainer(name, image, command));
+          String name, String image, String serverName, String... command) {
+    return hasItem(createContainer(name, image, serverName, command));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasContainerWithEnvVar(
+          String name, String image, String serverName, V1EnvVar envVar, String... command) {
+    return hasItem(createContainerWithEnvVar(name, image, serverName, envVar, command));
   }
 
   public static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
@@ -62,8 +69,17 @@ public class Matchers {
         new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
   }
 
-  private static V1Container createContainer(String name, String image, String... command) {
-    return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  private static V1Container createContainer(String name, String image, String serverName, String... command) {
+    return new V1Container().name(name).image(image).command(Arrays.asList(command))
+            .env(PodHelperTestBase.getPredefinedEnvVariables(serverName));
+  }
+
+  private static V1Container createContainerWithEnvVar(String name, String image, String serverName,
+                                                       V1EnvVar envVar, String... command) {
+    List<V1EnvVar> envVars = new ArrayList<>(Arrays.asList(envVar));
+    envVars.addAll(PodHelperTestBase.getPredefinedEnvVariables(serverName));
+    return new V1Container().name(name).image(image).command(Arrays.asList(command))
+            .env(envVars);
   }
 
   @SuppressWarnings("unused")

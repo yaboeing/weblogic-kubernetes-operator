@@ -56,6 +56,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVarRegEx;
@@ -599,7 +600,8 @@ public class JobHelperTest extends DomainValidationBaseTest {
     configureDomain()
         .withInitContainer(
             createContainer(
-                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+                    "container1", "busybox", SERVER_NAME,
+                    "sh",  "-c", "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -613,13 +615,15 @@ public class JobHelperTest extends DomainValidationBaseTest {
     configureDomain()
         .withContainer(
             createContainer(
-                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"));
+                    "container1", "busybox", SERVER_NAME,
+                    "sh",  "-c", "echo managed server && sleep 120"));
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
         getPodSpec(jobSpec).getContainers(),
-        not(hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        not(hasContainer("container1","busybox", SERVER_NAME,
+                "sh",  "-c", "echo admin server && sleep 120"))
     );
   }
 
